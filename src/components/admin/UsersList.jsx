@@ -29,6 +29,12 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
+  FormLabel,
+  FormGroup,
+  Switch,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -40,6 +46,9 @@ import {
 } from "@mui/icons-material";
 import adminService from "../../api/adminService";
 
+// Import for toast notifications
+import { toast } from "react-toastify";
+
 const UsersList = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +59,24 @@ const UsersList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
+
+  // Add these new state variables
+  const [openAddDialog, setOpenAddDialog] = useState(false);
+  const [newUser, setNewUser] = useState({
+    username: "",
+    email: "",
+    password: "",
+    password_confirmation: "",
+    role: "student",
+    is_active: true,
+  });
+  const [addUserError, setAddUserError] = useState("");
+  const [submitLoading, setSubmitLoading] = useState(false);
+
+  // Add these state variables near your other state declarations
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -99,6 +126,116 @@ const UsersList = () => {
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
+  };
+
+  // Handle opening the add user dialog
+  const handleOpenAddUserDialog = () => {
+    setNewUser({
+      username: "",
+      email: "",
+      password: "",
+      password_confirmation: "",
+      role: "student",
+      is_active: true,
+    });
+    setAddUserError("");
+    setOpenAddDialog(true);
+  };
+
+  // Handle closing the add user dialog
+  const handleCloseAddUserDialog = () => {
+    setOpenAddDialog(false);
+  };
+
+  // Handle input changes for new user
+  const handleNewUserChange = (e) => {
+    const { name, value } = e.target;
+    setNewUser({ ...newUser, [name]: value });
+  };
+
+  // Handle switch toggle for is_active
+  const handleSwitchChange = (e) => {
+    setNewUser({ ...newUser, is_active: e.target.checked });
+  };
+
+  // Handle form submission for adding a new user
+  const handleAddUser = async () => {
+    try {
+      setSubmitLoading(true);
+      setAddUserError("");
+
+      // Validate the form
+      if (
+        !newUser.username ||
+        !newUser.email ||
+        !newUser.password ||
+        !newUser.password_confirmation
+      ) {
+        setAddUserError("All fields are required");
+        setSubmitLoading(false);
+        return;
+      }
+
+      if (newUser.password !== newUser.password_confirmation) {
+        setAddUserError("Passwords do not match");
+        setSubmitLoading(false);
+        return;
+      }
+
+      // Add the user through the admin service's createUser method instead of post
+      await adminService.createUser(newUser);
+
+      // Close the dialog
+      setOpenAddDialog(false);
+
+      // Refresh the user list
+      fetchUsers();
+
+      // Show success message
+      toast.success("User added successfully!");
+    } catch (error) {
+      console.error("Error adding user:", error);
+      if (error.response && error.response.data) {
+        setAddUserError(error.response.data.detail || "Failed to add user");
+      } else {
+        setAddUserError("Failed to add user. Please try again.");
+      }
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  // Add these functions to handle the delete workflow
+  const handleOpenDeleteDialog = (user) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setUserToDelete(null);
+  };
+
+  const handleDeleteUser = async () => {
+    try {
+      setDeleteLoading(true);
+      await adminService.deleteUser(userToDelete.id);
+
+      // Close the dialog
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+
+      // Refresh the users list
+      fetchUsers();
+
+      // Show success message
+      toast.success("User deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error(error.response?.data?.detail || "Failed to delete user");
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const filteredUsers = users.filter(
@@ -163,7 +300,10 @@ const UsersList = () => {
             <MenuItem value="student">Student</MenuItem>
           </Select>
         </FormControl>
-        <Button variant="contained" onClick={() => fetchUsers()}>
+        <Button variant="contained" onClick={handleOpenAddUserDialog}>
+          Add User
+        </Button>
+        <Button variant="contained" onClick={fetchUsers}>
           Refresh
         </Button>
       </Box>
@@ -269,6 +409,15 @@ const UsersList = () => {
                         <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
+                    <Tooltip title="Delete User">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleOpenDeleteDialog(user)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
                 </Card>
               </Grid>
@@ -323,7 +472,11 @@ const UsersList = () => {
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Delete User">
-                          <IconButton size="small" color="error">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleOpenDeleteDialog(user)}
+                          >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
@@ -414,9 +567,154 @@ const UsersList = () => {
             <DialogActions>
               <Button onClick={handleCloseDialog}>Close</Button>
               <Button variant="contained">Edit User</Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => {
+                  handleCloseDialog();
+                  handleOpenDeleteDialog(selectedUser);
+                }}
+              >
+                Delete User
+              </Button>
             </DialogActions>
           </>
         )}
+      </Dialog>
+
+      {/* Add User Dialog */}
+      <Dialog
+        open={openAddDialog}
+        onClose={handleCloseAddUserDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Add New User</DialogTitle>
+        <DialogContent>
+          {addUserError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {addUserError}
+            </Alert>
+          )}
+          <DialogContentText>
+            Enter the details of the new user. All fields are required.
+          </DialogContentText>
+          <TextField
+            margin="dense"
+            name="username"
+            label="Username"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={newUser.username}
+            onChange={handleNewUserChange}
+            sx={{ mb: 2, mt: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="email"
+            label="Email Address"
+            type="email"
+            fullWidth
+            variant="outlined"
+            value={newUser.email}
+            onChange={handleNewUserChange}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="password"
+            label="Password"
+            type="password"
+            fullWidth
+            variant="outlined"
+            value={newUser.password}
+            onChange={handleNewUserChange}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="password_confirmation"
+            label="Confirm Password"
+            type="password"
+            fullWidth
+            variant="outlined"
+            value={newUser.password_confirmation}
+            onChange={handleNewUserChange}
+            sx={{ mb: 2 }}
+          />
+          <FormControl component="fieldset" sx={{ mb: 2 }}>
+            <FormLabel component="legend">Role</FormLabel>
+            <RadioGroup
+              row
+              name="role"
+              value={newUser.role}
+              onChange={handleNewUserChange}
+            >
+              <FormControlLabel
+                value="student"
+                control={<Radio />}
+                label="Student"
+              />
+              <FormControlLabel
+                value="teacher"
+                control={<Radio />}
+                label="Teacher"
+              />
+              <FormControlLabel
+                value="admin"
+                control={<Radio />}
+                label="Admin"
+              />
+            </RadioGroup>
+          </FormControl>
+          <FormGroup>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={newUser.is_active}
+                  onChange={handleSwitchChange}
+                  name="is_active"
+                />
+              }
+              label="Active"
+            />
+          </FormGroup>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddUserDialog}>Cancel</Button>
+          <Button
+            onClick={handleAddUser}
+            variant="contained"
+            disabled={submitLoading}
+          >
+            {submitLoading ? "Adding..." : "Add User"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>
+        <DialogTitle>Confirm User Deletion</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete user "{userToDelete?.username}"?
+            This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteDialog} disabled={deleteLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteUser}
+            color="error"
+            variant="contained"
+            disabled={deleteLoading}
+          >
+            {deleteLoading ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

@@ -43,11 +43,45 @@ const getSessionAttendance = async (sessionId) => {
   }
 };
 
+const createUser = async (userData) => {
+  try {
+    const response = await apiService.post("/users", userData);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating user:", error);
+    throw error;
+  }
+};
+
+const deleteUser = async (userId) => {
+  try {
+    const response = await apiService.delete(`/users/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    throw error;
+  }
+};
+const createClass = async (classData) => {
+  try {
+    const response = await apiService.post("/classes", classData);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating class:", error);
+    throw error;
+  }
+};
+
 const adminService = {
   getUsers,
   getClasses,
+
   getClassSessions,
   getSessionAttendance,
+  createUser,
+  deleteUser,
+
+  createClass,
 };
 
 export default adminService;
