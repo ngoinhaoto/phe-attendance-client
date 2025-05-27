@@ -162,7 +162,7 @@ const removeStudentFromClass = async (classId, studentId) => {
     console.log(`Removing student ${studentId} from class ${classId}`);
     // Your backend uses a URL parameter pattern, not a request body
     const response = await apiService.delete(
-      `/classes/${classId}/students/${studentId}`
+      `/classes/${classId}/students/${studentId}`,
     );
     console.log("Remove student response:", response.data);
     return response.data;
@@ -172,6 +172,42 @@ const removeStudentFromClass = async (classId, studentId) => {
       console.error("Response data:", error.response.data);
       console.error("Response status:", error.response.status);
     }
+    throw error;
+  }
+};
+
+// Create a new class session
+const createClassSession = async (sessionData) => {
+  try {
+    const response = await apiService.post("/classes/sessions", sessionData);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating class session:", error);
+    throw error;
+  }
+};
+
+// Update an existing class session
+const updateClassSession = async (sessionId, sessionData) => {
+  try {
+    const response = await apiService.put(
+      `/classes/sessions/${sessionId}`,
+      sessionData,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating class session:", error);
+    throw error;
+  }
+};
+
+// Delete a class session
+const deleteClassSession = async (sessionId) => {
+  try {
+    const response = await apiService.delete(`/classes/sessions/${sessionId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting class session:", error);
     throw error;
   }
 };
@@ -190,6 +226,9 @@ const adminService = {
   getClassStudents,
   addStudentToClass,
   removeStudentFromClass,
+  createClassSession, // Add this
+  updateClassSession, // Add this
+  deleteClassSession, // Add this
 };
 
 export default adminService;
