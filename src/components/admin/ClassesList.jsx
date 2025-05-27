@@ -24,6 +24,9 @@ import {
 } from "@mui/material";
 import adminService from "../../api/adminService";
 import { toast } from "react-toastify";
+import ClassEditDialog from "./classes/ClassEditDialog";
+import ClassDeleteDialog from "./classes/ClassDeleteDialog";
+import ClassStudentsDialog from "./classes/ClassStudentsDialog";
 
 const ClassesList = () => {
   const [classes, setClasses] = useState([]);
@@ -47,16 +50,49 @@ const ClassesList = () => {
   const [addClassError, setAddClassError] = useState("");
   const [submitLoading, setSubmitLoading] = useState(false);
 
+  // Edit class dialog state
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [classToEdit, setClassToEdit] = useState(null);
+  const [isOperationLoading, setIsOperationLoading] = useState(false);
+
+  // Delete class dialog state
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [classToDelete, setClassToDelete] = useState(null);
+
+  // Manage students dialog state
+  const [openStudentsDialog, setOpenStudentsDialog] = useState(false);
+  const [selectedClass, setSelectedClass] = useState(null);
+
   useEffect(() => {
     fetchClasses();
     fetchTeachers();
   }, []);
 
+  // Update the fetchClasses function
+
   const fetchClasses = async () => {
     try {
       setLoading(true);
       const data = await adminService.getClasses();
-      setClasses(data);
+      console.log("Initial classes data:", data);
+
+      // Update each class with its students
+      const classesWithStudents = await Promise.all(
+        data.map(async (cls) => {
+          try {
+            console.log(`Fetching students for class ${cls.id}`);
+            const students = await adminService.getClassStudents(cls.id);
+            console.log(`Class ${cls.id} has ${students.length} students`);
+            return { ...cls, students };
+          } catch (err) {
+            console.error(`Error fetching students for class ${cls.id}:`, err);
+            return { ...cls, students: [] };
+          }
+        }),
+      );
+
+      console.log("Classes with students:", classesWithStudents);
+      setClasses(classesWithStudents);
     } catch (error) {
       console.error("Error fetching classes:", error);
       toast.error("Failed to load classes");
@@ -167,6 +203,57 @@ const ClassesList = () => {
     }
   };
 
+  const handleOpenEditDialog = (cls) => {
+    setClassToEdit(cls);
+    setOpenEditDialog(true);
+  };
+
+  const handleUpdateClass = async (classId, classData) => {
+    setIsOperationLoading(true);
+    try {
+      await adminService.updateClass(classId, classData);
+      setOpenEditDialog(false);
+      setClassToEdit(null);
+      fetchClasses(); // Refresh the class list
+      toast.success("Class updated successfully!");
+      return true;
+    } catch (error) {
+      console.error("Error updating class:", error);
+      const errorMessage =
+        error.response?.data?.detail || "Failed to update class";
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsOperationLoading(false);
+    }
+  };
+
+  const handleOpenDeleteDialog = (cls) => {
+    setClassToDelete(cls);
+    setOpenDeleteDialog(true);
+  };
+
+  const handleDeleteClass = async (classId) => {
+    setIsOperationLoading(true);
+    try {
+      await adminService.deleteClass(classId);
+      fetchClasses(); // Refresh the class list
+      toast.success("Class deleted successfully!");
+      return true;
+    } catch (error) {
+      console.error("Error deleting class:", error);
+      toast.error("Failed to delete class");
+      return false;
+    } finally {
+      setIsOperationLoading(false);
+    }
+  };
+
+  const handleOpenStudentsDialog = (cls) => {
+    setSelectedClass(cls);
+    setOpenStudentsDialog(true);
+  };
+
   const filteredClasses = classes.filter(
     (cls) =>
       cls.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -244,18 +331,54 @@ const ClassesList = () => {
                     <Typography variant="body2">
                       Teacher: {getTeacherName(cls.teacher, cls.teacher_id)}
                     </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        my: 1,
+                      }}
+                    >
+                      <Typography variant="body2">Students:</Typography>
+                      <Chip
+                        size="small"
+                        label={
+                          Array.isArray(cls.students) ? cls.students.length : 0
+                        }
+                        color={
+                          Array.isArray(cls.students) && cls.students.length > 0
+                            ? "primary"
+                            : "default"
+                        }
+                        onClick={() => handleOpenStudentsDialog(cls)}
+                      />
+                    </Box>
                     <Typography variant="body2">
-                      Students: {cls.students?.length || 0}
-                    </Typography>
-                    <Typography variant="body2">
-                      Sessions: {cls.sessions?.length || 0}
+                      Sessions:{" "}
+                      {Array.isArray(cls.sessions) ? cls.sessions.length : 0}
                     </Typography>
                   </Box>
                 </CardContent>
                 <CardActions>
                   <Button size="small">View Details</Button>
-                  <Button size="small">Edit</Button>
-                  <Button size="small" color="error">
+                  <Button
+                    size="small"
+                    onClick={() => handleOpenEditDialog(cls)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="small"
+                    color="primary"
+                    onClick={() => handleOpenStudentsDialog(cls)}
+                  >
+                    Manage Students
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={() => handleOpenDeleteDialog(cls)}
+                  >
                     Delete
                   </Button>
                 </CardActions>
@@ -446,6 +569,42 @@ const ClassesList = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Edit Class Dialog */}
+      <ClassEditDialog
+        open={openEditDialog}
+        classData={classToEdit}
+        teachers={teachers}
+        onClose={() => {
+          setOpenEditDialog(false);
+          setClassToEdit(null);
+        }}
+        onUpdateClass={handleUpdateClass}
+      />
+
+      {/* Delete Class Dialog */}
+      <ClassDeleteDialog
+        open={openDeleteDialog}
+        classData={classToDelete}
+        onClose={() => {
+          setOpenDeleteDialog(false);
+          setClassToDelete(null);
+        }}
+        onDelete={handleDeleteClass}
+      />
+
+      {/* Manage Students Dialog */}
+      <ClassStudentsDialog
+        open={openStudentsDialog}
+        classData={selectedClass}
+        onClose={() => {
+          setOpenStudentsDialog(false);
+          setSelectedClass(null);
+        }}
+        onUpdate={() => {
+          fetchClasses();
+        }}
+      />
     </Box>
   );
 };
