@@ -30,10 +30,12 @@ import {
   Delete as DeleteIcon,
   Event as EventIcon,
   AccessTime as TimeIcon,
+  PeopleAlt as PeopleIcon,
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import adminService from "../../../api/adminService";
 import { format, parseISO } from "date-fns";
+import SessionAttendanceDialog from "./SessionAttendanceDialog";
 
 const ClassSessionsDialog = ({ open, classData, onClose, onUpdate }) => {
   const [sessions, setSessions] = useState([]);
@@ -42,6 +44,9 @@ const ClassSessionsDialog = ({ open, classData, onClose, onUpdate }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
+  const [openAttendanceDialog, setOpenAttendanceDialog] = useState(false);
+  const [selectedSessionForAttendance, setSelectedSessionForAttendance] =
+    useState(null);
 
   // Form state for new/edited session
   const [sessionForm, setSessionForm] = useState({
@@ -225,6 +230,11 @@ const ClassSessionsDialog = ({ open, classData, onClose, onUpdate }) => {
     }
   };
 
+  const handleViewAttendance = (session) => {
+    setSelectedSessionForAttendance(session);
+    setOpenAttendanceDialog(true);
+  };
+
   const formatDateTime = (dateTimeStr) => {
     try {
       return format(parseISO(dateTimeStr), "MMM d, yyyy h:mm a");
@@ -344,6 +354,13 @@ const ClassSessionsDialog = ({ open, classData, onClose, onUpdate }) => {
                             onClick={() => handleOpenEditForm(session)}
                           >
                             <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            color="info"
+                            onClick={() => handleViewAttendance(session)}
+                            title="View Attendance"
+                          >
+                            <PeopleIcon />
                           </IconButton>
                           <IconButton
                             color="error"
@@ -478,6 +495,15 @@ const ClassSessionsDialog = ({ open, classData, onClose, onUpdate }) => {
             </Grid>
           </Box>
         )}
+
+        <SessionAttendanceDialog
+          open={openAttendanceDialog}
+          session={selectedSessionForAttendance}
+          onClose={() => {
+            setOpenAttendanceDialog(false);
+            setSelectedSessionForAttendance(null);
+          }}
+        />
       </DialogContent>
 
       <DialogActions>

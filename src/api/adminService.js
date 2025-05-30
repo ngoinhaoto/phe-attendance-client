@@ -212,6 +212,22 @@ const deleteClassSession = async (sessionId) => {
   }
 };
 
+// Update a student's attendance status
+const updateAttendanceStatus = async (sessionId, studentId, status) => {
+  try {
+    const response = await apiService.put(
+      `/attendance/sessions/${sessionId}/students/${studentId}`,
+      {
+        status: status,
+      },
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating attendance status:", error);
+    throw error;
+  }
+};
+
 const adminService = {
   getUsers,
   getClasses,
@@ -229,6 +245,7 @@ const adminService = {
   createClassSession, // Add this
   updateClassSession, // Add this
   deleteClassSession, // Add this
+  updateAttendanceStatus, // Add this
 };
 
 export default adminService;

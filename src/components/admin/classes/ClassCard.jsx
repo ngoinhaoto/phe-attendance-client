@@ -16,6 +16,8 @@ const ClassCard = ({
   onDelete,
   onManageStudents,
   onManageSessions,
+  onViewStats,
+  onViewAttendanceSummary, // Add this prop
 }) => {
   // Function to get teacher's name by ID
   const getTeacherName = (teacherObj, teacherId) => {
@@ -86,7 +88,16 @@ const ClassCard = ({
         </Box>
       </CardContent>
       <CardActions>
-        <Button size="small">View Details</Button>
+        <Button size="small" onClick={() => onViewStats(classData)}>
+          Stats
+        </Button>
+        <Button
+          size="small"
+          color="info"
+          onClick={() => onViewAttendanceSummary(classData)}
+        >
+          Attendance
+        </Button>
         <Button size="small" onClick={() => onEdit(classData)}>
           Edit
         </Button>

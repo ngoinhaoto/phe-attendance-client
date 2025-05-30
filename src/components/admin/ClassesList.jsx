@@ -16,6 +16,8 @@ import ClassEditDialog from "./classes/ClassEditDialog";
 import ClassDeleteDialog from "./classes/ClassDeleteDialog";
 import ClassStudentsDialog from "./classes/ClassStudentsDialog";
 import ClassSessionsDialog from "./classes/ClassSessionsDialog";
+import ClassStatsDialog from "./classes/ClassStatsDialog";
+import ClassAttendanceSummary from "./classes/ClassAttendanceSummary";
 import useClasses from "../../hooks/useClasses"; // We'll create this hook
 import { format } from "date-fns";
 
@@ -38,6 +40,9 @@ const ClassesList = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openStudentsDialog, setOpenStudentsDialog] = useState(false);
   const [openSessionsDialog, setOpenSessionsDialog] = useState(false);
+  const [openStatsDialog, setOpenStatsDialog] = useState(false);
+  const [openAttendanceSummaryDialog, setOpenAttendanceSummaryDialog] =
+    useState(false);
 
   // Selected items
   const [classToEdit, setClassToEdit] = useState(null);
@@ -65,6 +70,16 @@ const ClassesList = () => {
   const handleOpenSessionsDialog = (cls) => {
     setSelectedClass(cls);
     setOpenSessionsDialog(true);
+  };
+
+  const handleOpenStatsDialog = (cls) => {
+    setSelectedClass(cls);
+    setOpenStatsDialog(true);
+  };
+
+  const handleOpenAttendanceSummaryDialog = (cls) => {
+    setSelectedClass(cls);
+    setOpenAttendanceSummaryDialog(true);
   };
 
   const handleSearchChange = (event) => {
@@ -115,6 +130,8 @@ const ClassesList = () => {
                 onDelete={handleOpenDeleteDialog}
                 onManageStudents={handleOpenStudentsDialog}
                 onManageSessions={handleOpenSessionsDialog}
+                onViewStats={handleOpenStatsDialog}
+                onViewAttendanceSummary={handleOpenAttendanceSummaryDialog}
               />
             </Grid>
           ))}
@@ -181,6 +198,24 @@ const ClassesList = () => {
           setSelectedClass(null);
         }}
         onUpdate={() => fetchClasses()}
+      />
+
+      <ClassStatsDialog
+        open={openStatsDialog}
+        classData={selectedClass}
+        onClose={() => {
+          setOpenStatsDialog(false);
+          setSelectedClass(null);
+        }}
+      />
+
+      <ClassAttendanceSummary
+        open={openAttendanceSummaryDialog}
+        classData={selectedClass}
+        onClose={() => {
+          setOpenAttendanceSummaryDialog(false);
+          setSelectedClass(null);
+        }}
       />
     </Box>
   );
