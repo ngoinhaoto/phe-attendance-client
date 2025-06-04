@@ -1,0 +1,19 @@
+.camera-container {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.camera-view {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.camera-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+}

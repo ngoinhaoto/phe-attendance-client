@@ -14,6 +14,7 @@ import store from "./store";
 import LoginPage from "./components/auth/LoginPage";
 import Dashboard from "./components/shared/Dashboard";
 import PrivateRoute from "./components/shared/PrivateRoute";
+import AttendanceKiosk from "./components/kiosk/AttendanceKiosk";
 
 // Create a custom theme with better aesthetics
 const theme = createTheme({
@@ -122,6 +123,17 @@ function App() {
                   <Dashboard />
                 </PrivateRoute>
               }
+            />
+            <Route path="/kiosk" element={<AttendanceKiosk />} />
+            <Route path="/kiosk/class/:classId" element={<AttendanceKiosk />} />
+            <Route
+              path="/kiosk/class/:classId/session/:sessionId"
+              element={<AttendanceKiosk />}
+            />
+
+            <Route
+              path="/kiosk/session/:sessionId"
+              element={<AttendanceKiosk />}
             />
             <Route path="/" element={<Navigate to="/dashboard" />} />
             <Route path="*" element={<Navigate to="/login" />} />
