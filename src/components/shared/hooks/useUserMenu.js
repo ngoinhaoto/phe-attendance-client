@@ -20,7 +20,8 @@ export default function useUserMenu() {
   const handleLogout = () => {
     handleUserMenuClose();
     authService.logout();
-    navigate("/login");
+    // Force a page reload to ensure complete logout
+    window.location.href = "/login";
   };
 
   const handleProfileNavigation = () => {

@@ -31,7 +31,8 @@ const SideNav = ({
 
   const handleLogout = () => {
     authService.logout();
-    navigate("/login");
+    // Force a page reload which will redirect to login due to PrivateRoute
+    window.location.href = "/login";
   };
 
   return (

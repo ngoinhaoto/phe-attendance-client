@@ -58,9 +58,16 @@ const login = async (username, password) => {
   }
 };
 
-const logout = () => {
+// Update the logout function
+
+const logout = (redirect = true) => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
+
+  // Optional redirect parameter allows for flexibility
+  if (redirect) {
+    window.location.href = "/login";
+  }
 };
 
 const authService = {

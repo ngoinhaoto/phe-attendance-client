@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { login } from "../../features/auth/authSlice";
@@ -14,6 +14,7 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
+import CameraIcon from "@mui/icons-material/Camera";
 
 const LoginSchema = Yup.object().shape({
   username: Yup.string().required("Username is required"),
@@ -23,9 +24,13 @@ const LoginSchema = Yup.object().shape({
 const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isLoading, isAuthenticated, error } = useSelector(
     (state) => state.auth,
   );
+
+  const searchParams = new URLSearchParams(location.search);
+  const message = searchParams.get("message");
 
   React.useEffect(() => {
     if (isAuthenticated) {
@@ -53,6 +58,11 @@ const LoginPage = () => {
           </Typography>
 
           {error && <Alert severity="error">{error}</Alert>}
+          {message === "admin_required" && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Administrator access required. Please log in with an admin account.
+            </Alert>
+          )}
 
           <Formik
             initialValues={{ username: "", password: "" }}
@@ -103,6 +113,20 @@ const LoginPage = () => {
               </Form>
             )}
           </Formik>
+
+          <Box sx={{ textAlign: "center", mt: 3 }}>
+            <Typography variant="body2" color="text.secondary" mb={1}>
+              Need to check in to a class?
+            </Typography>
+            <Button
+              component={Link}
+              to="/kiosk"
+              variant="outlined"
+              startIcon={<CameraIcon />}
+            >
+              Go to Attendance Kiosk
+            </Button>
+          </Box>
         </Paper>
       </Box>
     </Container>

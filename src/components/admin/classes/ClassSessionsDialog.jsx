@@ -86,15 +86,38 @@ const ClassSessionsDialog = ({ open, classData, onClose, onUpdate }) => {
   };
 
   const resetForm = () => {
+    // Get current date in local timezone
+    const now = new Date();
+    const oneHourLater = new Date(now);
+    oneHourLater.setHours(now.getHours() + 1);
+
+    // Format for input fields (YYYY-MM-DDThh:mm)
+    const localDateStr = now.toISOString().split("T")[0];
+    const localStartTimeStr = formatDateTimeForInput(now);
+    const localEndTimeStr = formatDateTimeForInput(oneHourLater);
+
     setSessionForm({
-      session_date: new Date().toISOString().split("T")[0],
-      start_time: new Date().toISOString().slice(0, 16),
-      end_time: new Date(new Date().setHours(new Date().getHours() + 1))
-        .toISOString()
-        .slice(0, 16),
+      session_date: localDateStr,
+      start_time: localStartTimeStr,
+      end_time: localEndTimeStr,
       notes: "",
     });
     setSelectedSession(null);
+  };
+
+  // Add this helper function to format dates for datetime-local inputs in local timezone
+  const formatDateTimeForInput = (date) => {
+    if (!date) return "";
+
+    // Get local parts
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    // Format as YYYY-MM-DDThh:mm (standard format for datetime-local inputs)
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   const handleOpenAddForm = () => {
@@ -105,12 +128,19 @@ const ClassSessionsDialog = ({ open, classData, onClose, onUpdate }) => {
 
   const handleOpenEditForm = (session) => {
     setSelectedSession(session);
+
+    // Parse session dates and convert to local timezone
+    const sessionDate = new Date(session.session_date);
+    const startTime = new Date(session.start_time);
+    const endTime = new Date(session.end_time);
+
     setSessionForm({
-      session_date: session.session_date.split("T")[0],
-      start_time: session.start_time,
-      end_time: session.end_time,
+      session_date: sessionDate.toISOString().split("T")[0],
+      start_time: formatDateTimeForInput(startTime),
+      end_time: formatDateTimeForInput(endTime),
       notes: session.notes || "",
     });
+
     setIsEditing(true);
     setIsAdding(false);
   };
@@ -131,12 +161,17 @@ const ClassSessionsDialog = ({ open, classData, onClose, onUpdate }) => {
         return;
       }
 
+      // Create Date objects with the user's timezone
+      const sessionDate = new Date(sessionForm.session_date);
+      const startTime = new Date(sessionForm.start_time);
+      const endTime = new Date(sessionForm.end_time);
+
       // Prepare data for API
       const sessionData = {
         class_id: classData.id,
-        session_date: new Date(sessionForm.session_date),
-        start_time: new Date(sessionForm.start_time),
-        end_time: new Date(sessionForm.end_time),
+        session_date: sessionDate.toISOString(),
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
         notes: sessionForm.notes,
       };
 

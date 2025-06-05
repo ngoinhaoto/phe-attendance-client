@@ -15,6 +15,8 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
+// Import the utility function
+import { formatDateTimeForInput } from "../../../utils/dateUtils";
 
 const ClassEditDialog = ({
   open,
@@ -74,10 +76,7 @@ const ClassEditDialog = ({
 
   // Function to format date for datetime-local input
   const formatDateForInput = (date) => {
-    if (!date) return "";
-    const d = new Date(date);
-    // Format as YYYY-MM-DDThh:mm
-    return d.toISOString().slice(0, 16);
+    return formatDateTimeForInput(date);
   };
 
   const handleClose = () => {

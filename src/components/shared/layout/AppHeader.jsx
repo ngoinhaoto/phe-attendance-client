@@ -6,7 +6,8 @@ import {
   IconButton,
   Box,
   Tooltip,
-  Badge
+  Badge,
+  Button
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -14,6 +15,8 @@ import {
   Notifications as NotificationIcon
 } from "@mui/icons-material";
 import UserMenu from './UserMenu';
+import { Link } from 'react-router-dom';
+import CameraIcon from '@mui/icons-material/Camera';
 
 const AppHeader = ({ user, open, roleColors, toggleDrawer }) => {
   const roleGradient = `linear-gradient(135deg, ${roleColors[0]} 0%, ${roleColors[1]} 100%)`;
@@ -73,7 +76,19 @@ const AppHeader = ({ user, open, roleColors, toggleDrawer }) => {
         </Tooltip>
 
         {/* User Profile Menu */}
-        {user && <UserMenu user={user} roleGradient={roleGradient} />}
+        {user ? (
+          <UserMenu user={user} roleGradient={roleGradient} />
+        ) : (
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/kiosk" 
+            startIcon={<CameraIcon />}
+            sx={{ ml: 2 }}
+          >
+            Attendance Kiosk
+          </Button>
+        )}
       </Toolbar>
     </AppBar>
   );

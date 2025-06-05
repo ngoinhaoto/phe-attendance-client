@@ -14,6 +14,8 @@ import {
   Select,
   Alert,
 } from "@mui/material";
+// Import the utility function
+import { formatDateTimeForInput } from "../../../utils/dateUtils";
 
 const AddClassDialog = ({ open, teachers, onClose, onAddClass }) => {
   const [newClass, setNewClass] = useState({
@@ -59,10 +61,7 @@ const AddClassDialog = ({ open, teachers, onClose, onAddClass }) => {
 
   // Function to format date for datetime-local input
   const formatDateForInput = (date) => {
-    if (!date) return "";
-    const d = new Date(date);
-    // Format as YYYY-MM-DDThh:mm
-    return d.toISOString().slice(0, 16);
+    return formatDateTimeForInput(date);
   };
 
   const handleSubmit = async () => {

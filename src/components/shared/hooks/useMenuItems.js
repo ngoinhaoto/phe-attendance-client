@@ -1,15 +1,24 @@
-import React from 'react';
+import React from "react";
 import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   Class as ClassIcon,
-  AccountCircle
+  AccountCircle,
+  PhotoCamera as CameraIcon,
 } from "@mui/icons-material";
 
 export default function useMenuItems(user) {
   if (!user || !user.role) {
     return [];
   }
+
+  // Only create kiosk menu item for admins
+  const kioskMenuItem = {
+    text: "Attendance Kiosk",
+    icon: <CameraIcon />,
+    path: "/kiosk",
+    exact: true,
+  };
 
   const commonMenuItems = [
     {
@@ -29,6 +38,7 @@ export default function useMenuItems(user) {
         exact: true,
       },
       ...commonMenuItems,
+      kioskMenuItem, // Only add for admins
       {
         text: "Users",
         icon: <PeopleIcon />,

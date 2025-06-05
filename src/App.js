@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
+  useLocation,
+  useNavigate,
 } from "react-router-dom";
 import { Provider } from "react-redux";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -15,6 +17,7 @@ import LoginPage from "./components/auth/LoginPage";
 import Dashboard from "./components/shared/Dashboard";
 import PrivateRoute from "./components/shared/PrivateRoute";
 import AttendanceKiosk from "./components/kiosk/AttendanceKiosk";
+import AdminRoute from "./components/shared/routes/AdminRoute";
 
 // Create a custom theme with better aesthetics
 const theme = createTheme({
@@ -108,36 +111,145 @@ const theme = createTheme({
   },
 });
 
+// Create a separate component that uses the router hooks
+function AppContent() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Add auth state monitoring and kiosk mode check
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem("token");
+      const isInKioskMode = sessionStorage.getItem("kioskMode") === "true";
+
+      // If in kiosk mode and trying to navigate away from kiosk paths
+      if (isInKioskMode && !location.pathname.includes("/kiosk")) {
+        // Force back to kiosk
+        navigate("/kiosk", { replace: true });
+        return;
+      }
+
+      // Normal auth check - if token gone but on protected route
+      if (!token && location.pathname.includes("/dashboard")) {
+        navigate("/login");
+      }
+    };
+
+    // Check on mount and when location changes
+    checkAuth();
+
+    // Set up listener for storage events
+    const handleStorageChange = (e) => {
+      if (e.key === "token" && !e.newValue) {
+        checkAuth();
+      }
+      if (e.key === "kioskMode") {
+        checkAuth();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // Also add a more aggressive navigation blocker for kiosk mode
+    const blockNavigation = (e) => {
+      const isInKioskMode = sessionStorage.getItem("kioskMode") === "true";
+      if (isInKioskMode) {
+        // Block navigation attempts
+        e.preventDefault();
+        // Navigate back to kiosk
+        navigate("/kiosk");
+      }
+    };
+
+    // Listen for popstate events (browser back/forward buttons)
+    window.addEventListener("popstate", blockNavigation);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("popstate", blockNavigation);
+    };
+  }, [location, navigate]);
+
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={<KioskModeGuard component={<LoginPage />} />}
+      />
+      <Route
+        path="/dashboard/*"
+        element={
+          <KioskModeGuard
+            component={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
+        }
+      />
+      <Route
+        path="/kiosk"
+        element={
+          <AdminRoute>
+            <AttendanceKiosk />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/kiosk/class/:classId"
+        element={
+          <AdminRoute>
+            <AttendanceKiosk />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/kiosk/class/:classId/session/:sessionId"
+        element={
+          <AdminRoute>
+            <AttendanceKiosk />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/kiosk/session/:sessionId"
+        element={
+          <AdminRoute>
+            <AttendanceKiosk />
+          </AdminRoute>
+        }
+      />
+      <Route path="/" element={<Navigate to="/dashboard" />} />
+      <Route path="*" element={<Navigate to="/login" />} />
+    </Routes>
+  );
+}
+
+// Create a KioskModeGuard component
+function KioskModeGuard({ component }) {
+  const navigate = useNavigate();
+  const isInKioskMode = sessionStorage.getItem("kioskMode") === "true";
+
+  // If in kiosk mode, redirect back to kiosk
+  useEffect(() => {
+    if (isInKioskMode) {
+      navigate("/kiosk", { replace: true });
+    }
+  }, [isInKioskMode, navigate]);
+
+  // Only render the component if not in kiosk mode
+  return isInKioskMode ? null : component;
+}
+
+// Main App component that sets up providers
 function App() {
   return (
     <Provider store={store}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Router>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route
-              path="/dashboard/*"
-              element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              }
-            />
-            <Route path="/kiosk" element={<AttendanceKiosk />} />
-            <Route path="/kiosk/class/:classId" element={<AttendanceKiosk />} />
-            <Route
-              path="/kiosk/class/:classId/session/:sessionId"
-              element={<AttendanceKiosk />}
-            />
-
-            <Route
-              path="/kiosk/session/:sessionId"
-              element={<AttendanceKiosk />}
-            />
-            <Route path="/" element={<Navigate to="/dashboard" />} />
-            <Route path="*" element={<Navigate to="/login" />} />
-          </Routes>
+          <AppContent />
         </Router>
       </ThemeProvider>
     </Provider>

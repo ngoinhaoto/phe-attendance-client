@@ -24,6 +24,9 @@ import {
 } from "@mui/icons-material";
 import apiService from "../../api/apiService";
 
+// Import utility functions from dateUtils
+import { formatDate, formatTime, isSessionActive } from "../../utils/dateUtils";
+
 const AttendanceCheckIn = () => {
   const { user } = useSelector((state) => state.auth);
   const [loading, setLoading] = useState(false);
@@ -83,9 +86,21 @@ const AttendanceCheckIn = () => {
       setLoading(true);
       setError("");
 
-      const response = await apiService.get("/users/me/classes");
-      setClasses(response.data);
+      let response;
 
+      // Get classes based on user role
+      if (user.role === "admin") {
+        // Admins can see all classes
+        response = await apiService.get("/classes");
+      } else if (user.role === "teacher") {
+        // Teachers see classes they teach
+        response = await apiService.get("/users/me/classes");
+      } else {
+        // Students see classes they're enrolled in
+        response = await apiService.get("/users/me/classes");
+      }
+
+      setClasses(response.data);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching classes:", error);
@@ -280,6 +295,10 @@ const AttendanceCheckIn = () => {
           setError(
             "Your face was not recognized. Please make sure you have registered your face in your profile.",
           );
+        } else if (errorMsg.includes("Only students")) {
+          setError(
+            "This feature is currently limited to students. Please contact your administrator.",
+          );
         } else {
           setError(errorMsg);
         }
@@ -287,54 +306,6 @@ const AttendanceCheckIn = () => {
         setError("Network error. Please try again.");
       }
     }
-  };
-
-  const formatTime = (timeString) => {
-    if (!timeString) return "";
-
-    try {
-      const date = new Date(timeString);
-      return date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch (e) {
-      return timeString;
-    }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString([], {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    } catch (e) {
-      return dateString;
-    }
-  };
-
-  const isSessionActive = (session) => {
-    if (!session) return false;
-
-    const now = new Date();
-    const sessionDate = new Date(session.session_date);
-
-    // Check if same day
-    if (sessionDate.toDateString() !== now.toDateString()) {
-      return false;
-    }
-
-    // Check if current time is within session times
-    const startTime = new Date(session.start_time);
-    const endTime = new Date(session.end_time);
-
-    return now >= startTime && now <= endTime;
   };
 
   return (
@@ -487,7 +458,6 @@ const AttendanceCheckIn = () => {
         </Card>
       )}
 
-      {/* Camera */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
           Face Recognition Check-In

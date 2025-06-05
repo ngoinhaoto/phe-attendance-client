@@ -23,8 +23,11 @@ export const login = createAsyncThunk(
   },
 );
 
-export const logout = createAsyncThunk("auth/logout", async () => {
+// Update the logout thunk to properly handle navigation
+export const logout = createAsyncThunk("auth/logout", async (_, { dispatch }) => {
   authService.logout();
+  // Return a value to indicate successful logout
+  return true;
 });
 
 const authSlice = createSlice({
@@ -55,6 +58,7 @@ const authSlice = createSlice({
       .addCase(logout.fulfilled, (state) => {
         state.isAuthenticated = false;
         state.user = null;
+        // No need to navigate here, we'll handle that in the component
       });
   },
 });
