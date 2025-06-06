@@ -20,6 +20,8 @@ const KioskHeader = ({
   user,
   showBlockedNavAlert,
   setShowBlockedNavAlert,
+  selectedClassId,
+  classes,
 }) => {
   return (
     <header className="kiosk-header">
@@ -102,7 +104,43 @@ const KioskHeader = ({
             />
           </Box>
         </div>
+      ) : selectedClassId ? (
+        // New state: Class selected but no session selected
+        <div className="session-info-intermediate">
+          <h2>
+            {classes.find((c) => c.id.toString() === selectedClassId)?.name ||
+              `Class #${selectedClassId}`}
+          </h2>
+          <p>Please select a session for this class below</p>
+          <Box className="class-details-brief">
+            {classes.find((c) => c.id.toString() === selectedClassId)?.teacher
+              ?.full_name && (
+              <Box className="detail-item">
+                <TeacherIcon fontSize="small" />
+                <Typography variant="body1">
+                  {
+                    classes.find((c) => c.id.toString() === selectedClassId)
+                      ?.teacher?.full_name
+                  }
+                </Typography>
+              </Box>
+            )}
+            {classes.find((c) => c.id.toString() === selectedClassId)
+              ?.location && (
+              <Box className="detail-item">
+                <LocationIcon fontSize="small" />
+                <Typography variant="body1">
+                  {
+                    classes.find((c) => c.id.toString() === selectedClassId)
+                      ?.location
+                  }
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </div>
       ) : (
+        // Original "no selection" state
         <div className="session-info">
           <h2>No Session Selected</h2>
           <p>Please select a class and session below</p>

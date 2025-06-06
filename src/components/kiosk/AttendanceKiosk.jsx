@@ -281,6 +281,8 @@ const AttendanceKiosk = () => {
         user={user}
         showBlockedNavAlert={showBlockedNavAlert}
         setShowBlockedNavAlert={setShowBlockedNavAlert}
+        selectedClassId={selectedClassId}
+        classes={classes}
       />
 
       <main className="kiosk-main">
