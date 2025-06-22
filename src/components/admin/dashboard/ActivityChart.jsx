@@ -1,0 +1,98 @@
+import React from "react";
+import { Paper, Typography, Box, useTheme } from "@mui/material";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+
+const ActivityChart = ({ data, colors }) => {
+  const theme = useTheme();
+
+  return (
+    <Paper
+      sx={{
+        p: { xs: 2, md: 3 },
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "visible",
+      }}
+    >
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
+        Activity Overview
+      </Typography>
+      <Box
+        sx={{
+          flexGrow: 1,
+          height: "calc(100% - 40px)",
+          width: "100%",
+          overflow: "visible",
+        }}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={data}
+            margin={{
+              top: 20,
+              right: 30,
+              left: 20,
+              bottom: 40,
+            }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis
+              dataKey="date"
+              tick={{
+                fill: theme.palette.text.secondary,
+                fontSize: 12,
+              }}
+            />
+            <YAxis
+              tick={{
+                fill: theme.palette.text.secondary,
+                fontSize: 12,
+              }}
+            />
+            <Tooltip
+              contentStyle={{
+                borderRadius: theme.shape.borderRadius,
+                boxShadow: theme.shadows[3],
+                border: "none",
+              }}
+              formatter={(value, name) => {
+                return [value, name === "students" ? "Students" : "Check-ins"];
+              }}
+              labelFormatter={(label) => `${label}`}
+            />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="students"
+              name="Students"
+              stroke={colors[2]}
+              strokeWidth={3}
+              dot={{ r: 5, strokeWidth: 2 }}
+              activeDot={{ r: 8 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="attendance"
+              name="Check-ins"
+              stroke={colors[1]}
+              strokeWidth={3}
+              dot={{ r: 5, strokeWidth: 2 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </Box>
+    </Paper>
+  );
+};
+
+export default ActivityChart;
