@@ -14,6 +14,7 @@ import FaceDetailsDialog from "./components/FaceDetailsDialog";
 import AttendanceStatsCards from "./components/AttendanceStatsCards";
 import UpcomingSessionsList from "./components/UpcomingSessionsList";
 import RecentAttendanceList from "./components/RecentAttendanceList";
+import SecuritySettingsCard from "./components/SecuritySettingsCard"; // Import the new component
 
 const StudentDashboard = () => {
   const { user } = useSelector((state) => state.auth);
@@ -40,7 +41,7 @@ const StudentDashboard = () => {
     deleteFace,
     openFaceDetails,
     setDetailsOpen,
-    resetRegistration, // Destructure the new resetRegistration function
+    resetRegistration,
   } = useFaceRegistration(user);
 
   // For initial development, show placeholder info if no data is available
@@ -96,6 +97,9 @@ const StudentDashboard = () => {
         openFaceDetails={openFaceDetails}
         deleteFace={deleteFace}
       />
+      
+      {/* Security Settings Card */}
+      <SecuritySettingsCard />
 
       {/* Attendance Statistics */}
       <AttendanceStatsCards stats={stats} />
@@ -119,7 +123,7 @@ const StudentDashboard = () => {
         videoRef={videoRef}
         canvasRef={canvasRef}
         onRegister={registerFace}
-        onReset={resetRegistration} // Pass the resetRegistration function as a prop
+        onReset={resetRegistration}
       />
 
       <FaceDetailsDialog

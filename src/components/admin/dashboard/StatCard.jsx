@@ -1,5 +1,5 @@
-import React from 'react';
-import { Card, CardContent, Box, Typography, alpha } from '@mui/material';
+import React from "react";
+import { Card, CardContent, Box, Typography, alpha } from "@mui/material";
 import {
   PeopleAlt as PeopleIcon,
   Class as ClassIcon,
@@ -7,17 +7,18 @@ import {
   PersonAdd as TeacherIcon,
 } from "@mui/icons-material";
 
-const StatCard = ({ card }) => {
+// Updated to accept individual props instead of a card object
+const StatCard = ({ title, value, color, icon }) => {
   // Function to get the right icon based on the type
   const getIcon = (iconType) => {
     switch (iconType) {
-      case 'people':
+      case "people":
         return <PeopleIcon sx={{ fontSize: 40 }} />;
-      case 'class':
+      case "class":
         return <ClassIcon sx={{ fontSize: 40 }} />;
-      case 'school':
+      case "school":
         return <SchoolIcon sx={{ fontSize: 40 }} />;
-      case 'teacher':
+      case "teacher":
         return <TeacherIcon sx={{ fontSize: 40 }} />;
       default:
         return <PeopleIcon sx={{ fontSize: 40 }} />;
@@ -28,11 +29,11 @@ const StatCard = ({ card }) => {
     <Card
       sx={{
         height: "100%",
-        background: `linear-gradient(135deg, ${alpha(
-          card.color,
-          0.1,
-        )} 0%, ${alpha(card.color, 0.05)} 100%)`,
-        border: `1px solid ${alpha(card.color, 0.1)}`,
+        background: `linear-gradient(135deg, ${alpha(color, 0.1)} 0%, ${alpha(
+          color,
+          0.05,
+        )} 100%)`,
+        border: `1px solid ${alpha(color, 0.1)}`,
         position: "relative",
         overflow: "hidden",
         "&::before": {
@@ -42,7 +43,7 @@ const StatCard = ({ card }) => {
           left: 0,
           width: "5px",
           height: "100%",
-          background: card.color,
+          background: color,
         },
       }}
     >
@@ -55,18 +56,11 @@ const StatCard = ({ card }) => {
           }}
         >
           <Box>
-            <Typography
-              variant="subtitle2"
-              color="text.secondary"
-              gutterBottom
-            >
-              {card.title}
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              {title}
             </Typography>
-            <Typography
-              variant="h4"
-              sx={{ fontWeight: "bold", color: card.color }}
-            >
-              {card.value}
+            <Typography variant="h4" sx={{ fontWeight: "bold", color: color }}>
+              {value}
             </Typography>
           </Box>
           <Box
@@ -77,11 +71,11 @@ const StatCard = ({ card }) => {
               width: 60,
               height: 60,
               borderRadius: "50%",
-              background: alpha(card.color, 0.1),
-              color: card.color,
+              background: alpha(color, 0.1),
+              color: color,
             }}
           >
-            {getIcon(card.icon)}
+            {getIcon(icon)}
           </Box>
         </Box>
       </CardContent>

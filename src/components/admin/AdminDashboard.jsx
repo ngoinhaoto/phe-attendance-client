@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Box, Grid, CircularProgress, Typography } from "@mui/material";
-import { format, subMonths, startOfMonth } from "date-fns";
+import {
+  format,
+  subMonths,
+  startOfMonth,
+  parseISO,
+  isWithinInterval,
+  endOfMonth,
+} from "date-fns";
 import adminService from "../../api/adminService";
 
 // Import component files
@@ -8,11 +15,16 @@ import StatCard from "./dashboard/StatCard";
 import ActivityChart from "./dashboard/ActivityChart";
 import UserRoleChart from "./dashboard/UserRoleChart";
 import ClassSizeChart from "./dashboard/ClassSizeChart";
+import DateRangePicker from "./dashboard/DateRangePicker";
 
 const COLORS = ["#FF5722", "#2196F3", "#4CAF50", "#FFC107"];
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState({
+    startDate: subMonths(new Date(), 5), // Default to 5 months (semester)
+    endDate: new Date(),
+  });
   const [stats, setStats] = useState({
     users: { total: 0, admins: 0, teachers: 0, students: 0 },
     classes: [],
@@ -20,115 +32,84 @@ const AdminDashboard = () => {
     activityData: [],
   });
 
-  const fetchMonthlyActivityData = async () => {
+  const handleDateRangeChange = (startDate, endDate) => {
+    setDateRange({ startDate, endDate });
+  };
+
+  const fetchMonthlyActivityData = async (startDate, endDate) => {
     try {
-      const today = new Date();
-      const monthlyData = [];
+      const monthsArray = [];
+      let currentDate = new Date(startDate);
 
-      for (let i = 5; i >= 0; i--) {
-        const monthDate = subMonths(today, i);
-        const monthStart = startOfMonth(monthDate);
-        const monthLabel = format(monthDate, "MMM");
-        const year = format(monthDate, "yyyy");
-
-        const allUsers = await adminService.getUsers();
-        const studentsCount = allUsers.filter(
-          (user) =>
-            user.role === "student" && new Date(user.created_at) <= monthDate,
-        ).length;
-
-        const allClasses = await adminService.getClasses();
-        let attendanceCount = 0;
-
-        for (const cls of allClasses) {
-          const sessions = await adminService.getClassSessions(cls.id);
-
-          const monthSessions = sessions.filter((session) => {
-            const sessionDate = new Date(session.session_date);
-            return (
-              format(sessionDate, "yyyy-MM") === format(monthStart, "yyyy-MM")
-            );
-          });
-
-          for (const session of monthSessions) {
-            const attendance = await adminService.getSessionAttendance(
-              session.id,
-            );
-
-            const presentAndLate = attendance.filter(
-              (record) =>
-                record.status?.toLowerCase() === "present" ||
-                record.status?.toLowerCase() === "late",
-            ).length;
-
-            attendanceCount += presentAndLate;
-          }
-        }
-
-        monthlyData.push({
-          date: monthLabel,
-          year: year,
-          students: studentsCount,
-          attendance: attendanceCount,
+      // Generate an array of months between startDate and endDate
+      while (currentDate <= endDate) {
+        monthsArray.push({
+          date: format(currentDate, "MMM"),
+          year: format(currentDate, "yyyy"),
+          month: currentDate.getMonth(),
+          fullYear: currentDate.getFullYear(),
         });
+        currentDate = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth() + 1,
+          1,
+        );
       }
+
+      const allUsers = await adminService.getUsers();
+      const allClasses = await adminService.getClasses();
+
+      // Process data for each month
+      const monthlyData = await Promise.all(
+        monthsArray.map(async (monthInfo) => {
+          const monthDate = new Date(monthInfo.fullYear, monthInfo.month, 1);
+          const monthEnd = endOfMonth(monthDate);
+
+          // Count students created by this month
+          const studentsCount = allUsers.filter(
+            (user) =>
+              user.role === "student" && new Date(user.created_at) <= monthEnd,
+          ).length;
+
+          // Get attendance for this month
+          let attendanceCount = 0;
+          for (const cls of allClasses) {
+            const sessions = await adminService.getClassSessions(cls.id);
+
+            const monthSessions = sessions.filter((session) => {
+              const sessionDate = new Date(session.session_date);
+              return (
+                format(sessionDate, "yyyy-MM") === format(monthDate, "yyyy-MM")
+              );
+            });
+
+            for (const session of monthSessions) {
+              const attendance = await adminService.getSessionAttendance(
+                session.id,
+              );
+
+              const presentAndLate = attendance.filter(
+                (record) =>
+                  record.status?.toLowerCase() === "present" ||
+                  record.status?.toLowerCase() === "late",
+              ).length;
+
+              attendanceCount += presentAndLate;
+            }
+          }
+
+          return {
+            ...monthInfo,
+            students: studentsCount,
+            attendance: attendanceCount,
+          };
+        }),
+      );
 
       return monthlyData;
     } catch (error) {
       console.error("Error fetching monthly activity data:", error);
       return [];
-    }
-  };
-
-  const fetchAttendanceDistribution = async () => {
-    try {
-      let totalPresent = 0;
-      let totalLate = 0;
-      let totalAbsent = 0;
-
-      const classes = await adminService.getClasses();
-
-      for (const cls of classes) {
-        const sessions = await adminService.getClassSessions(cls.id);
-
-        for (const session of sessions) {
-          const attendance = await adminService.getSessionAttendance(
-            session.id,
-          );
-
-          totalPresent += attendance.filter(
-            (record) => record.status?.toLowerCase() === "present",
-          ).length;
-
-          totalLate += attendance.filter(
-            (record) => record.status?.toLowerCase() === "late",
-          ).length;
-
-          totalAbsent += attendance.filter(
-            (record) => record.status?.toLowerCase() === "absent",
-          ).length;
-        }
-      }
-
-      const total = totalPresent + totalLate + totalAbsent;
-      if (total === 0)
-        return [
-          { name: "Present", value: 0 },
-          { name: "Late", value: 0 },
-          { name: "Absent", value: 0 },
-        ];
-
-      return [
-        { name: "Present", value: totalPresent },
-        { name: "Late", value: totalLate },
-        { name: "Absent", value: totalAbsent },
-      ];
-    } catch (error) {
-      console.error("Error fetching attendance distribution:", error);
-      return [
-        { name: "Present", value: 0 },
-        { name: "Absent", value: 0 },
-      ];
     }
   };
 
@@ -155,38 +136,43 @@ const AdminDashboard = () => {
         .sort((a, b) => b.students - a.students)
         .slice(0, 5);
     } catch (error) {
-      console.error("Error getting class sizes:", error);
+      console.error("Error fetching class sizes:", error);
       return [];
     }
   };
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-
-        // Fetch users
+        // Fetch all users
         const users = await adminService.getUsers();
         const admins = users.filter((user) => user.role === "admin").length;
         const teachers = users.filter((user) => user.role === "teacher").length;
         const students = users.filter((user) => user.role === "student").length;
 
-        // Fetch classes with proper student counts
+        // Fetch all classes
         const classes = await adminService.getClasses();
+
+        // Fetch monthly activity data
+        const activityData = await fetchMonthlyActivityData(
+          dateRange.startDate,
+          dateRange.endDate,
+        );
+
+        // Fetch classes with student counts
         const classesWithSizes = await getClassesWithStudentCounts();
 
-        // Fetch real attendance data
-        const attendanceData = await fetchAttendanceDistribution();
-
-        // Fetch real monthly activity data
-        const activityData = await fetchMonthlyActivityData();
-
         setStats({
-          users: { total: users.length, admins, teachers, students },
+          users: {
+            total: users.length,
+            admins,
+            teachers,
+            students,
+          },
           classes,
-          classesWithSizes,
-          attendanceData,
           activityData,
+          classesWithSizes,
         });
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -196,7 +182,7 @@ const AdminDashboard = () => {
     };
 
     fetchData();
-  }, []);
+  }, [dateRange.startDate, dateRange.endDate]);
 
   // Define stat cards data
   const statCards = [
@@ -235,7 +221,14 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "50vh",
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -257,11 +250,25 @@ const AdminDashboard = () => {
         Admin Dashboard
       </Typography>
 
+      {/* Date Range Picker */}
+      <Box sx={{ mb: 4 }}>
+        <DateRangePicker
+          startDate={dateRange.startDate}
+          endDate={dateRange.endDate}
+          onChange={handleDateRangeChange}
+        />
+      </Box>
+
       {/* Stat Cards */}
       <Grid container spacing={10} sx={{ mb: 4 }}>
         {statCards.map((card, index) => (
           <Grid item xs={12} sm={6} md={3} key={index}>
-            <StatCard card={card} />
+            <StatCard
+              title={card.title}
+              value={card.value}
+              color={card.color}
+              icon={card.icon}
+            />
           </Grid>
         ))}
       </Grid>
@@ -299,7 +306,7 @@ const AdminDashboard = () => {
 
         {/* Class Size Chart - Full width but smaller height */}
         <Box sx={{ mb: 4 }}>
-          <ClassSizeChart data={stats.classesWithSizes} colors={COLORS} />
+          <ClassSizeChart data={stats.classesWithSizes || []} colors={COLORS} />
         </Box>
       </Box>
     </Box>

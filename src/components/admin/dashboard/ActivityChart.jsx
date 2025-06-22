@@ -14,6 +14,17 @@ import {
 const ActivityChart = ({ data, colors }) => {
   const theme = useTheme();
 
+  // Format data to show year only when it changes
+  const formattedData = data.map((item, index, array) => {
+    // Add the year to the first item and when the year changes
+    const showYear = index === 0 || item.year !== array[index - 1]?.year;
+    return {
+      ...item,
+      index, // Store the original index
+      displayDate: showYear ? `${item.date} ${item.year}` : item.date,
+    };
+  });
+
   return (
     <Paper
       sx={{
@@ -37,7 +48,7 @@ const ActivityChart = ({ data, colors }) => {
       >
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
-            data={data}
+            data={formattedData}
             margin={{
               top: 20,
               right: 30,
@@ -47,11 +58,14 @@ const ActivityChart = ({ data, colors }) => {
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis
-              dataKey="date"
+              dataKey="displayDate"
               tick={{
                 fill: theme.palette.text.secondary,
                 fontSize: 12,
               }}
+              angle={-25}
+              textAnchor="end"
+              height={60}
             />
             <YAxis
               tick={{
@@ -68,7 +82,14 @@ const ActivityChart = ({ data, colors }) => {
               formatter={(value, name) => {
                 return [value, name === "students" ? "Students" : "Check-ins"];
               }}
-              labelFormatter={(label) => `${label}`}
+              labelFormatter={(label, payload) => {
+                // Just use the payload's data directly
+                if (payload && payload.length > 0) {
+                  const item = payload[0].payload;
+                  return `${item.date} ${item.year}`;
+                }
+                return label;
+              }}
             />
             <Legend />
             <Line

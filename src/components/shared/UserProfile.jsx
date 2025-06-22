@@ -25,6 +25,9 @@ import {
   School as SchoolIcon,
 } from "@mui/icons-material";
 
+// Import our new PasswordChangeForm component
+import PasswordChangeForm from "./PasswordChangeForm";
+
 const UserProfile = () => {
   const theme = useTheme();
   const { user } = useSelector((state) => state.auth);
@@ -153,6 +156,11 @@ const UserProfile = () => {
               </Typography>
             </CardContent>
           </Card>
+
+          {/* Add Password Change Form Here */}
+          <Box mt={3}>
+            <PasswordChangeForm userId={user.id} />
+          </Box>
         </Grid>
 
         <Grid item xs={12} md={8}>
