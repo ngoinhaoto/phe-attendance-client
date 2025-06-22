@@ -40,6 +40,7 @@ const StudentDashboard = () => {
     deleteFace,
     openFaceDetails,
     setDetailsOpen,
+    resetRegistration, // Destructure the new resetRegistration function
   } = useFaceRegistration(user);
 
   // For initial development, show placeholder info if no data is available
@@ -118,6 +119,7 @@ const StudentDashboard = () => {
         videoRef={videoRef}
         canvasRef={canvasRef}
         onRegister={registerFace}
+        onReset={resetRegistration} // Pass the resetRegistration function as a prop
       />
 
       <FaceDetailsDialog

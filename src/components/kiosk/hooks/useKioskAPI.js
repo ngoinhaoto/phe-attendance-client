@@ -13,6 +13,7 @@ export default function useKioskAPI({
   setSessionInfo,
   navigate,
   setStatus,
+  setRecentCheckins, // Add this parameter
 }) {
   // Teacher cache to avoid refetching teacher info
   const teacherCache = useRef({});
@@ -201,6 +202,53 @@ export default function useKioskAPI({
         }
 
         setSessionInfo(session);
+
+        // After setting the session info, fetch the attendance records for this session
+        try {
+          const attendanceResponse = await apiService.get(
+            `/attendance/sessions/${sessionId}/students`,
+          );
+
+          if (Array.isArray(attendanceResponse.data)) {
+            console.log(
+              "Attendance records from API:",
+              attendanceResponse.data,
+            );
+
+            // Transform attendance records to match the expected format for recentCheckins
+            const checkins = attendanceResponse.data.map((record) => ({
+              id: record.student_id,
+              name:
+                record.full_name ||
+                record.student_name ||
+                record.user?.full_name ||
+                record.username ||
+                "Unknown Student",
+              time: record.check_in_time
+                ? new Date(record.check_in_time).toLocaleTimeString()
+                : "Unknown",
+              status: record.status,
+              lateMinutes: record.late_minutes || 0,
+            }));
+
+            checkins.sort((a, b) => {
+              const timeA = new Date(a.time);
+              const timeB = new Date(b.time);
+
+              const validTimeA = isNaN(timeA) ? new Date(0) : timeA;
+              const validTimeB = isNaN(timeB) ? new Date(0) : timeB;
+
+              return validTimeB - validTimeA;
+            });
+
+            console.log("Processed checkins for UI:", checkins);
+
+            // Update the recentCheckins state
+            setRecentCheckins(checkins);
+          }
+        } catch (error) {
+          console.error("Failed to fetch attendance records:", error);
+        }
       } catch (error) {
         console.error("Error fetching session:", error);
         setErrorMessage(

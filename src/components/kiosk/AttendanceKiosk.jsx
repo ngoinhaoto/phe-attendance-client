@@ -70,10 +70,10 @@ const AttendanceKiosk = () => {
       setSessionInfo,
       navigate,
       setStatus,
+      setRecentCheckins,
     },
   );
 
-  // ---- Extracted Camera functions ----
   const { startCamera, stopCamera, captureImage, checkIn } = useCameraFunctions(
     {
       videoRef,
@@ -215,27 +215,46 @@ const AttendanceKiosk = () => {
     const checkVideoStream = () => {
       try {
         // Don't check if video isn't playing
-        if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) {
+        if (
+          !videoRef.current ||
+          videoRef.current.paused ||
+          videoRef.current.ended
+        ) {
           return;
         }
 
         // Check if we can capture a frame
-        const tempCanvas = document.createElement('canvas');
-        const context = tempCanvas.getContext('2d');
+        const tempCanvas = document.createElement("canvas");
+        const context = tempCanvas.getContext("2d");
         tempCanvas.width = videoRef.current.videoWidth || 640;
         tempCanvas.height = videoRef.current.videoHeight || 480;
 
         // Try to draw current video frame
-        context.drawImage(videoRef.current, 0, 0, tempCanvas.width, tempCanvas.height);
+        context.drawImage(
+          videoRef.current,
+          0,
+          0,
+          tempCanvas.width,
+          tempCanvas.height,
+        );
 
         // Check if the frame has any content (not just black)
-        const imageData = context.getImageData(0, 0, tempCanvas.width, tempCanvas.height).data;
+        const imageData = context.getImageData(
+          0,
+          0,
+          tempCanvas.width,
+          tempCanvas.height,
+        ).data;
         let hasContent = false;
 
         // Sample pixels throughout the image
         for (let i = 0; i < imageData.length; i += 5000) {
           // Check if any RGB values are significantly above black
-          if (imageData[i] > 20 || imageData[i + 1] > 20 || imageData[i + 2] > 20) {
+          if (
+            imageData[i] > 20 ||
+            imageData[i + 1] > 20 ||
+            imageData[i + 2] > 20
+          ) {
             hasContent = true;
             break;
           }

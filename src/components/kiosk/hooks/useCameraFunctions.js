@@ -338,6 +338,7 @@ export default function useCameraFunctions({
       console.log("Check-in response:", response.data);
       setMessage(
         `Success! ${
+          response.data.user?.full_name ||
           response.data.user?.name ||
           response.data.user_name ||
           "Unknown Student"
@@ -352,6 +353,9 @@ export default function useCameraFunctions({
       const checkin = {
         id: Date.now(),
         name:
+          response.data.user?.full_name ||
+          response.data.full_name ||
+          response.data.student_name ||
           response.data.user?.name ||
           response.data.user_name ||
           "Unknown Student",
