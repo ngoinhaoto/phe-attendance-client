@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -9,8 +9,13 @@ import {
   Typography,
   Alert,
   CircularProgress,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
-import { AddAPhoto as AddPhotoIcon } from "@mui/icons-material";
+import {
+  AddAPhoto as AddPhotoIcon,
+  Check as CheckIcon,
+} from "@mui/icons-material";
 
 const FaceRegistrationDialog = ({
   open,
@@ -23,6 +28,8 @@ const FaceRegistrationDialog = ({
   onRegister,
   onReset,
 }) => {
+  const [showGuide, setShowGuide] = useState(true);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Register Your Face</DialogTitle>
@@ -56,10 +63,30 @@ const FaceRegistrationDialog = ({
           </Alert>
         )}
 
-        <Typography variant="body2" paragraph>
-          Please look directly at the camera in good lighting. For best results,
-          register multiple angles of your face.
-        </Typography>
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="body1" fontWeight="medium" gutterBottom>
+            Face Registration Guidelines:
+          </Typography>
+          <Typography variant="body2" component="ul" sx={{ pl: 2 }}>
+            <li>Look directly at the camera in good lighting</li>
+            <li>Position your face within the oval guide</li>
+            <li>Ensure your entire face is visible (eyes, nose, mouth)</li>
+            <li>Remove glasses, masks, or anything covering your face</li>
+            <li>For best results, register multiple angles of your face</li>
+          </Typography>
+        </Box>
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showGuide}
+              onChange={() => setShowGuide(!showGuide)}
+              color="primary"
+            />
+          }
+          label="Show positioning guide"
+          sx={{ mb: 1 }}
+        />
 
         <Box
           sx={{
@@ -73,6 +100,7 @@ const FaceRegistrationDialog = ({
             mb: 2,
           }}
         >
+          {/* Video element */}
           <video
             ref={videoRef}
             autoPlay
@@ -87,6 +115,67 @@ const FaceRegistrationDialog = ({
             }}
           />
           <canvas ref={canvasRef} style={{ display: "none" }} />
+
+          {/* Face positioning guide */}
+          {showGuide && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                pointerEvents: "none",
+              }}
+            >
+              {/* Oval face guide */}
+              <Box
+                sx={{
+                  width: "60%",
+                  height: "80%",
+                  border: "3px dashed rgba(255, 255, 255, 0.6)",
+                  borderRadius: "50%",
+                  boxSizing: "border-box",
+                  position: "relative",
+                }}
+              />
+
+              {/* Center cross marker */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  width: "10px",
+                  height: "10px",
+                  backgroundColor: "transparent",
+                  "&::before, &::after": {
+                    content: '""',
+                    position: "absolute",
+                    backgroundColor: "rgba(255, 255, 255, 0.6)",
+                  },
+                  "&::before": {
+                    width: "10px",
+                    height: "2px",
+                    top: "4px",
+                    left: "0",
+                  },
+                  "&::after": {
+                    width: "2px",
+                    height: "10px",
+                    top: "0",
+                    left: "4px",
+                  },
+                }}
+              />
+
+              {/* Guidelines text */}
+              <div className="camera-guide-text">
+                Position your face within the oval
+              </div>
+            </Box>
+          )}
 
           {loading && (
             <Box
@@ -120,7 +209,14 @@ const FaceRegistrationDialog = ({
             Register Another
           </Button>
         ) : (
-          <Button onClick={onRegister} variant="contained" disabled={loading}>
+          <Button
+            onClick={onRegister}
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            startIcon={loading ? undefined : <CheckIcon />}
+          >
+            {loading ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
             {loading ? "Processing..." : "Register Face"}
           </Button>
         )}

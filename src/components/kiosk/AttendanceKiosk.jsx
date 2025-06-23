@@ -305,41 +305,6 @@ const AttendanceKiosk = () => {
       />
 
       <main className="kiosk-main">
-        {/* Class and Session Selectors */}
-        {!sessionInfo && (
-          <SessionSelector
-            loadingClasses={loadingClasses}
-            loadingSessions={loadingSessions}
-            classes={classes}
-            sessions={sessions}
-            selectedClassId={selectedClassId}
-            selectedSessionId={selectedSessionId}
-            handleClassChange={handleClassChange}
-            handleSessionChange={handleSessionChange}
-            formatTime={formatTime}
-          />
-        )}
-
-        {/* Camera View */}
-        <KioskCamera
-          loadingSession={loadingSession}
-          status={status}
-          message={message}
-          videoRef={videoRef}
-          canvasRef={canvasRef}
-          streamRef={streamRef}
-          startCamera={startCamera}
-        />
-
-        {/* Control Buttons */}
-        <KioskControls
-          status={status}
-          sessionInfo={sessionInfo}
-          loadingSession={loadingSession}
-          checkIn={checkIn}
-          handleBackToSessionSelection={handleBackToSessionSelection}
-        />
-
         {/* Error Message */}
         {errorMessage && (
           <div className="error-message">
@@ -349,10 +314,53 @@ const AttendanceKiosk = () => {
             </button>
           </div>
         )}
-      </main>
 
-      {/* Recent Check-ins Panel */}
-      <RecentCheckins recentCheckins={recentCheckins} />
+        {/* Class and Session Selectors */}
+        {!sessionInfo && (
+          <div className="session-selector-container">
+            <SessionSelector
+              loadingClasses={loadingClasses}
+              loadingSessions={loadingSessions}
+              classes={classes}
+              sessions={sessions}
+              selectedClassId={selectedClassId}
+              selectedSessionId={selectedSessionId}
+              handleClassChange={handleClassChange}
+              handleSessionChange={handleSessionChange}
+              formatTime={formatTime}
+            />
+          </div>
+        )}
+
+        {/* Side-by-side layout container */}
+        <div className="checkin-layout">
+          {/* Left column: Camera and Controls */}
+          <div className="camera-column">
+            <KioskCamera
+              loadingSession={loadingSession}
+              status={status}
+              message={message}
+              videoRef={videoRef}
+              canvasRef={canvasRef}
+              streamRef={streamRef}
+              startCamera={startCamera}
+            />
+
+            <KioskControls
+              status={status}
+              sessionInfo={sessionInfo}
+              loadingSession={loadingSession}
+              checkIn={checkIn}
+              handleBackToSessionSelection={handleBackToSessionSelection}
+            />
+          </div>
+
+          {/* Right column: Recent Check-ins */}
+          <div className="checkins-column">
+            <RecentCheckins recentCheckins={recentCheckins} />
+          </div>
+        </div>
+      </main>
     </div>
   );
 };

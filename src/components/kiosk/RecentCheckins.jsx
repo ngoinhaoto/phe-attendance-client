@@ -1,32 +1,42 @@
-import React from 'react';
+import React from "react";
 
 const RecentCheckins = ({ recentCheckins }) => {
+  if (!recentCheckins || recentCheckins.length === 0) {
+    return (
+      <div className="recent-checkins">
+        <h3>Recent Check-ins</h3>
+        <div className="no-checkins">No check-ins recorded yet</div>
+      </div>
+    );
+  }
+
   return (
-    <aside className="recent-checkins">
+    <div className="recent-checkins">
       <h3>Recent Check-ins</h3>
-      {recentCheckins.length > 0 ? (
-        <ul className="checkin-list">
-          {recentCheckins.map((checkin) => (
-            <li
-              key={checkin.id}
-              className={`checkin-item ${checkin.status.toLowerCase()}`}
-            >
-              <span className="checkin-name">{checkin.name}</span>
-              <div className="checkin-details">
-                <span className="checkin-time">{checkin.time}</span>
-                <span className="checkin-status">
-                  {checkin.status === "LATE"
-                    ? `Late (${checkin.lateMinutes} min)`
-                    : "Present"}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="no-checkins">No recent check-ins</p>
-      )}
-    </aside>
+
+      {/* Table-like header */}
+      <div className="checkin-header">
+        <div className="checkin-header-name">Name</div>
+        <div className="checkin-header-time">Time</div>
+        <div className="checkin-header-status">Status</div>
+      </div>
+
+      <ul className="checkin-list">
+        {recentCheckins.map((checkin, index) => (
+          <li
+            key={index}
+            className={`checkin-item ${checkin.status?.toLowerCase() || ""}`}
+          >
+            <div className="checkin-name">{checkin.name}</div>
+            <div className="checkin-time">{checkin.time}</div>
+            <div className="checkin-status">
+              {checkin.status}
+              {checkin.lateMinutes > 0 && ` (${checkin.lateMinutes}m late)`}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 };
 

@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
-import { CircularProgress } from "@mui/material";
+import React, { useState } from "react";
+import {
+  CircularProgress,
+  Box,
+  Typography,
+  Switch,
+  FormControlLabel,
+} from "@mui/material";
 
 const KioskCamera = ({
   loadingSession,
@@ -8,12 +14,13 @@ const KioskCamera = ({
   videoRef,
   canvasRef,
   streamRef,
-  startCamera
+  startCamera,
 }) => {
   const [cameraRetries, setCameraRetries] = useState(0);
+  const [showGuide, setShowGuide] = useState(true);
 
   const handleRetryCamera = () => {
-    setCameraRetries(prev => prev + 1);
+    setCameraRetries((prev) => prev + 1);
     startCamera();
   };
 
@@ -26,6 +33,32 @@ const KioskCamera = ({
         </div>
       ) : (
         <>
+          {/* Face positioning guide toggle */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showGuide}
+                onChange={() => setShowGuide(!showGuide)}
+                color="primary"
+                size="small"
+              />
+            }
+            label={
+              <Typography variant="body2">
+                Show face positioning guide
+              </Typography>
+            }
+            sx={{
+              mb: 1,
+              mt: 1,
+              width: "100%",
+              justifyContent: "flex-end",
+              "& .MuiFormControlLabel-label": {
+                fontSize: "0.875rem",
+              },
+            }}
+          />
+
           <div className={`camera-wrapper ${status}`}>
             <video
               ref={videoRef}
@@ -44,17 +77,99 @@ const KioskCamera = ({
             />
             <canvas ref={canvasRef} style={{ display: "none" }} />
 
-            {(status === "error" || (streamRef.current === null && status === "scanning")) && (
+            {/* Face positioning guide overlay */}
+            {showGuide && status === "scanning" && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  pointerEvents: "none",
+                  zIndex: 10,
+                }}
+              >
+                {/* Oval face guide */}
+                <Box
+                  sx={{
+                    width: "60%",
+                    height: "80%",
+                    border: "3px dashed rgba(255, 255, 255, 0.6)",
+                    borderRadius: "50%",
+                    boxSizing: "border-box",
+                    position: "relative",
+                  }}
+                />
+
+                {/* Center cross marker */}
+                <Box
+                  sx={{
+                    position: "absolute",
+                    width: "10px",
+                    height: "10px",
+                    backgroundColor: "transparent",
+                    "&::before, &::after": {
+                      content: '""',
+                      position: "absolute",
+                      backgroundColor: "rgba(255, 255, 255, 0.6)",
+                    },
+                    "&::before": {
+                      width: "10px",
+                      height: "2px",
+                      top: "4px",
+                      left: "0",
+                    },
+                    "&::after": {
+                      width: "2px",
+                      height: "10px",
+                      top: "0",
+                      left: "4px",
+                    },
+                  }}
+                />
+
+                {/* Guidelines text */}
+                <div className="camera-guide-text">
+                  Position your face within the oval for check-in
+                </div>
+              </Box>
+            )}
+
+            {(status === "error" ||
+              (streamRef.current === null && status === "scanning")) && (
               <div className="camera-error-overlay">
                 <div style={{ textAlign: "center", color: "white" }}>
                   <p style={{ marginBottom: "16px" }}>
-                    {status === "error" 
-                      ? "Camera error occurred" 
+                    {status === "error"
+                      ? "Error occurred"
                       : "Camera not active or showing black screen"}
                   </p>
                   <button onClick={handleRetryCamera} className="retry-button">
                     Retry Camera {cameraRetries > 0 ? `(${cameraRetries})` : ""}
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Status feedback overlay */}
+            {status === "processing" && (
+              <div className="camera-processing-overlay">
+                <CircularProgress size={40} style={{ color: "white" }} />
+                <p style={{ color: "white", marginTop: "8px" }}>
+                  Processing...
+                </p>
+              </div>
+            )}
+
+            {status === "success" && (
+              <div className="camera-success-overlay">
+                <div style={{ textAlign: "center" }}>
+                  <div className="success-icon">✓</div>
+                  <p>Check-in successful!</p>
                 </div>
               </div>
             )}
@@ -68,6 +183,36 @@ const KioskCamera = ({
               </div>
             )}
           </div>
+
+          {/* Face positioning instructions */}
+          {status === "scanning" && (
+            <Box
+              sx={{
+                width: "100%",
+                maxWidth: "500px",
+                mt: 1,
+                p: 2,
+                bgcolor: "rgba(25, 118, 210, 0.1)",
+                borderRadius: 1,
+                border: "1px solid rgba(25, 118, 210, 0.2)",
+              }}
+            >
+              <Typography
+                variant="body2"
+                component="div"
+                sx={{ fontWeight: "medium", mb: 1 }}
+              >
+                For successful check-in:
+              </Typography>
+              <Typography variant="caption" component="ul" sx={{ pl: 2, m: 0 }}>
+                <li>Look directly at the camera</li>
+                <li>Ensure good lighting on your face</li>
+                <li>Center your face inside the oval guide</li>
+                <li>Keep your entire face visible</li>
+                <li>Remove masks, sunglasses, or face coverings</li>
+              </Typography>
+            </Box>
+          )}
         </>
       )}
     </div>
