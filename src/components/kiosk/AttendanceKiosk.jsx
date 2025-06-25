@@ -15,6 +15,8 @@ import useKioskMode from "./hooks/useKioskMode";
 import useCameraFunctions from "./hooks/useCameraFunctions";
 import useEventHandlers from "./hooks/useEventHandlers";
 import RecentCheckins from "./RecentCheckins";
+import FullAttendanceTable from "./FullAttendanceTable";
+import ClassAttendanceSummary from "../admin/classes/ClassAttendanceSummary";
 
 // Import the utility functions
 import { formatDate, formatTime, isSessionValid } from "../../utils/dateUtils";
@@ -34,6 +36,7 @@ const AttendanceKiosk = () => {
   // Session state
   const [sessionInfo, setSessionInfo] = useState(null);
   const [recentCheckins, setRecentCheckins] = useState([]);
+  const [fullAttendance, setFullAttendance] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
 
   // Selection state
@@ -58,6 +61,9 @@ const AttendanceKiosk = () => {
   // Blocked navigation alert state
   const [showBlockedNavAlert, setShowBlockedNavAlert] = useState(false);
 
+  // Toggle state for full attendance view
+  const [showFullAttendance, setShowFullAttendance] = useState(false);
+
   // ---- Extracted API functions ----
   const { fetchClasses, fetchSessionsForClass, fetchSessionInfo } = useKioskAPI(
     {
@@ -71,6 +77,7 @@ const AttendanceKiosk = () => {
       navigate,
       setStatus,
       setRecentCheckins,
+      setFullAttendance, // Add this
     },
   );
 
@@ -355,9 +362,36 @@ const AttendanceKiosk = () => {
             />
           </div>
 
-          {/* Right column: Recent Check-ins */}
+          {/* Right column: Attendance Information */}
           <div className="checkins-column">
-            <RecentCheckins recentCheckins={recentCheckins} />
+            {/* Only show attendance info when we have session info */}
+            {sessionInfo && (
+              <>
+                {/* Attendance Summary */}
+                <ClassAttendanceSummary attendance={fullAttendance} />
+
+                {/* Toggle Button */}
+                <div className="view-toggle">
+                  <button
+                    className={`view-toggle-button ${
+                      showFullAttendance ? "expanded" : "collapsed"
+                    }`}
+                    onClick={() => setShowFullAttendance(!showFullAttendance)}
+                  >
+                    {showFullAttendance
+                      ? "Hide Full Attendance"
+                      : "View Full Attendance"}
+                  </button>
+                </div>
+
+                {/* Conditional display based on toggle */}
+                {showFullAttendance ? (
+                  <FullAttendanceTable attendance={fullAttendance} />
+                ) : (
+                  <RecentCheckins recentCheckins={recentCheckins} />
+                )}
+              </>
+            )}
           </div>
         </div>
       </main>

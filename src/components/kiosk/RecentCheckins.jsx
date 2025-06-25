@@ -28,7 +28,9 @@ const RecentCheckins = ({ recentCheckins }) => {
             className={`checkin-item ${checkin.status?.toLowerCase() || ""}`}
           >
             <div className="checkin-name">{checkin.name}</div>
-            <div className="checkin-time">{checkin.time}</div>
+            <div className="checkin-time">
+              {checkin.status.toLowerCase() === "absent" ? "—" : checkin.time}
+            </div>
             <div className="checkin-status">
               {checkin.status}
               {checkin.lateMinutes > 0 && ` (${checkin.lateMinutes}m late)`}

@@ -14,6 +14,7 @@ export default function useKioskAPI({
   navigate,
   setStatus,
   setRecentCheckins, // Add this parameter
+  setFullAttendance, // Add this
 }) {
   // Teacher cache to avoid refetching teacher info
   const teacherCache = useRef({});
@@ -216,20 +217,25 @@ export default function useKioskAPI({
             );
 
             // Transform attendance records to match the expected format for recentCheckins
-            const checkins = attendanceResponse.data.map((record) => ({
-              id: record.student_id,
-              name:
-                record.full_name ||
-                record.student_name ||
-                record.user?.full_name ||
-                record.username ||
-                "Unknown Student",
-              time: record.check_in_time
-                ? new Date(record.check_in_time).toLocaleTimeString()
-                : "Unknown",
-              status: record.status,
-              lateMinutes: record.late_minutes || 0,
-            }));
+            const checkins = attendanceResponse.data
+              .filter((record) => {
+                // Only include students who have actually checked in
+                return record.check_in_time != null;
+              })
+              .map((record) => ({
+                id: record.student_id,
+                name:
+                  record.full_name ||
+                  record.student_name ||
+                  record.user?.full_name ||
+                  record.username ||
+                  "Unknown Student",
+                time: record.check_in_time
+                  ? new Date(record.check_in_time).toLocaleTimeString()
+                  : "Unknown",
+                status: record.status,
+                lateMinutes: record.late_minutes || 0,
+              }));
 
             checkins.sort((a, b) => {
               const timeA = new Date(a.time);
@@ -245,6 +251,46 @@ export default function useKioskAPI({
 
             // Update the recentCheckins state
             setRecentCheckins(checkins);
+
+            // Process all attendance data (including absent students)
+            const allAttendance = attendanceResponse.data.map((record) => ({
+              id: record.student_id,
+              name:
+                record.full_name ||
+                record.student_name ||
+                record.user?.full_name ||
+                record.username ||
+                "Unknown Student",
+              time: record.check_in_time
+                ? new Date(record.check_in_time).toLocaleTimeString()
+                : "Not checked in",
+              status: record.status,
+              lateMinutes: record.late_minutes || 0,
+            }));
+
+            // Sort by status (present first, then late, then absent)
+            allAttendance.sort((a, b) => {
+              // First sort by status priority
+              const statusOrder = { present: 1, late: 2, absent: 3 };
+              const statusDiff =
+                statusOrder[a.status.toLowerCase()] -
+                statusOrder[b.status.toLowerCase()];
+
+              if (statusDiff !== 0) return statusDiff;
+
+              // If same status, sort by check-in time (recent first) for present/late
+              if (a.status.toLowerCase() !== "absent") {
+                const timeA = new Date(a.time);
+                const timeB = new Date(b.time);
+                return timeB - timeA;
+              }
+
+              // For absent students, sort alphabetically
+              return a.name.localeCompare(b.name);
+            });
+
+            // Update full attendance
+            setFullAttendance(allAttendance);
           }
         } catch (error) {
           console.error("Failed to fetch attendance records:", error);
