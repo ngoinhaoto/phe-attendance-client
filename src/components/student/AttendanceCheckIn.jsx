@@ -23,6 +23,7 @@ import {
   Schedule as ClockIcon,
 } from "@mui/icons-material";
 import apiService from "../../api/apiService";
+import { clearCachePattern } from "../../utils/apiCache";
 
 // Import utility functions from dateUtils
 import { formatDate, formatTime, isSessionActive } from "../../utils/dateUtils";
@@ -265,6 +266,11 @@ const AttendanceCheckIn = () => {
         },
       );
 
+      clearCachePattern(`attendance_session_${selectedSessionId}`);
+
+      // Clear dashboard data since attendance affects statistics
+      clearCachePattern("dashboard_");
+
       // Handle success
       stopCamera();
       setProcessingAttendance(false);
@@ -471,7 +477,7 @@ const AttendanceCheckIn = () => {
                 width: "100%",
                 maxWidth: "640px",
                 height: 0,
-                paddingBottom: "75%", // 4:3 Aspect ratio
+                paddingBottom: "75%",
                 margin: "0 auto",
                 mb: 2,
                 borderRadius: 2,
