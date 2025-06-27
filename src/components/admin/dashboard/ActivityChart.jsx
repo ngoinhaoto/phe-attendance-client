@@ -79,11 +79,13 @@ const ActivityChart = ({ data, colors }) => {
                 boxShadow: theme.shadows[3],
                 border: "none",
               }}
-              formatter={(value, name) => {
-                return [value, name === "students" ? "Students" : "Check-ins"];
+              formatter={(value, name, props) => {
+                // Match on the dataKey rather than the name
+                const label =
+                  props.dataKey === "students" ? "Students" : "Check-ins";
+                return [value, label];
               }}
               labelFormatter={(label, payload) => {
-                // Just use the payload's data directly
                 if (payload && payload.length > 0) {
                   const item = payload[0].payload;
                   return `${item.date} ${item.year}`;

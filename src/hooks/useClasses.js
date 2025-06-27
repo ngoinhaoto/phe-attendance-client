@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import adminService from "../api/adminService";
 import { toast } from "react-toastify";
+import { getCachedData, setCachedData } from "../utils/apiCache";
 
 const useClasses = () => {
   const [classes, setClasses] = useState([]);
@@ -8,37 +9,67 @@ const useClasses = () => {
   const [loading, setLoading] = useState(true);
   const [isOperationLoading, setIsOperationLoading] = useState(false);
 
+  // Add a request tracking ref to prevent duplicate requests
+  const pendingRequests = useRef({});
+
   // Fetch classes with student data
-  const fetchClasses = async () => {
+  const fetchClasses = useCallback(async () => {
+    // Check if there's already a pending request
+    if (pendingRequests.current.classes) {
+      console.log(
+        "Classes fetch already in progress, skipping duplicate request",
+      );
+      return pendingRequests.current.classes;
+    }
+
     try {
       setLoading(true);
-      const data = await adminService.getClasses();
+
+      // Create a promise for this request and store it
+      const requestPromise = adminService.getClasses();
+      pendingRequests.current.classes = requestPromise;
+
+      const data = await requestPromise;
       console.log("Initial classes data:", data);
 
-      // Update each class with its students
-      const classesWithStudents = await Promise.all(
-        data.map(async (cls) => {
-          try {
-            console.log(`Fetching students for class ${cls.id}`);
-            const students = await adminService.getClassStudents(cls.id);
-            console.log(`Class ${cls.id} has ${students.length} students`);
-            return { ...cls, students };
-          } catch (err) {
-            console.error(`Error fetching students for class ${cls.id}:`, err);
-            return { ...cls, students: [] };
+      // Process classes sequentially instead of in parallel
+      const classesWithStudents = [];
+      for (const cls of data) {
+        try {
+          console.log(`Fetching students for class ${cls.id}`);
+          // Check cache first
+          const cacheKey = `class_students_${cls.id}`;
+          let students = getCachedData(cacheKey);
+
+          if (!students) {
+            // If not in cache, fetch and cache
+            students = await adminService.getClassStudents(cls.id);
+            setCachedData(cacheKey, students);
+          } else {
+            console.log(`Using cached students for class ${cls.id}`);
           }
-        })
-      );
+
+          console.log(`Class ${cls.id} has ${students.length} students`);
+          classesWithStudents.push({ ...cls, students });
+        } catch (err) {
+          console.error(`Error fetching students for class ${cls.id}:`, err);
+          classesWithStudents.push({ ...cls, students: [] });
+        }
+      }
 
       console.log("Classes with students:", classesWithStudents);
       setClasses(classesWithStudents);
+      return classesWithStudents;
     } catch (error) {
       console.error("Error fetching classes:", error);
       toast.error("Failed to load classes");
+      return [];
     } finally {
       setLoading(false);
+      // Clear the pending request reference
+      delete pendingRequests.current.classes;
     }
-  };
+  }, []);
 
   // Fetch teachers
   const fetchTeachers = async () => {
@@ -69,7 +100,8 @@ const useClasses = () => {
       return true;
     } catch (error) {
       console.error("Error adding class:", error);
-      const errorMessage = error.response?.data?.detail || "Failed to add class";
+      const errorMessage =
+        error.response?.data?.detail || "Failed to add class";
       toast.error(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -87,7 +119,8 @@ const useClasses = () => {
       return true;
     } catch (error) {
       console.error("Error updating class:", error);
-      const errorMessage = error.response?.data?.detail || "Failed to update class";
+      const errorMessage =
+        error.response?.data?.detail || "Failed to update class";
       toast.error(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -141,9 +174,13 @@ const useClasses = () => {
 
   // Initialize data on component mount
   useEffect(() => {
-    fetchClasses();
-    fetchTeachers();
-  }, []);
+    const initData = async () => {
+      await fetchClasses();
+      await fetchTeachers();
+    };
+
+    initData();
+  }, [fetchClasses]);
 
   return {
     classes,
@@ -156,7 +193,7 @@ const useClasses = () => {
     updateClass,
     deleteClass,
     formatDateForInput,
-    getTeacherName
+    getTeacherName,
   };
 };
 

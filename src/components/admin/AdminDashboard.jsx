@@ -142,46 +142,53 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
+    // Add a request ID to prevent duplicate calls
+    const requestId = Math.random().toString(36).substring(7);
+    let isMounted = true;
+
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch all users
-        const users = await adminService.getUsers();
-        const admins = users.filter((user) => user.role === "admin").length;
-        const teachers = users.filter((user) => user.role === "teacher").length;
-        const students = users.filter((user) => user.role === "student").length;
+        // Use the new consolidated endpoint
+        const dashboardData = await adminService.getDashboardData(dateRange);
 
-        // Fetch all classes
-        const classes = await adminService.getClasses();
-
-        // Fetch monthly activity data
-        const activityData = await fetchMonthlyActivityData(
-          dateRange.startDate,
-          dateRange.endDate,
-        );
-
-        // Fetch classes with student counts
-        const classesWithSizes = await getClassesWithStudentCounts();
-
-        setStats({
-          users: {
-            total: users.length,
-            admins,
-            teachers,
-            students,
-          },
-          classes,
-          activityData,
-          classesWithSizes,
-        });
+        if (isMounted) {
+          setStats({
+            users: dashboardData?.users || {
+              total: 0,
+              admins: 0,
+              teachers: 0,
+              students: 0,
+            },
+            classes: dashboardData?.classes || [],
+            activityData: dashboardData?.activityData || [],
+            classesWithSizes: dashboardData?.classesWithSizes || [],
+          });
+        }
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        console.error(`Error fetching dashboard data (${requestId}):`, error);
+        // Initialize with empty data on error
+        if (isMounted) {
+          setStats({
+            users: { total: 0, admins: 0, teachers: 0, students: 0 },
+            classes: [],
+            activityData: [],
+            classesWithSizes: [],
+          });
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
+    console.log(`Starting dashboard data fetch (${requestId})`);
     fetchData();
+
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+      console.log(`Canceled dashboard data fetch (${requestId})`);
+    };
   }, [dateRange.startDate, dateRange.endDate]);
 
   // Define stat cards data
