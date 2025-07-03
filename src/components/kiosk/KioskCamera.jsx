@@ -5,7 +5,9 @@ import {
   Typography,
   Switch,
   FormControlLabel,
+  Button,
 } from "@mui/material";
+import RefreshIcon from "@mui/icons-material/Refresh";
 
 const KioskCamera = ({
   loadingSession,
@@ -34,30 +36,45 @@ const KioskCamera = ({
       ) : (
         <>
           {/* Face positioning guide toggle */}
-          <FormControlLabel
-            control={
-              <Switch
-                checked={showGuide}
-                onChange={() => setShowGuide(!showGuide)}
-                color="primary"
-                size="small"
-              />
-            }
-            label={
-              <Typography variant="body2">
-                Show face positioning guide
-              </Typography>
-            }
+          <Box
             sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
               mb: 1,
-              mt: 1,
-              width: "100%",
-              justifyContent: "flex-end",
-              "& .MuiFormControlLabel-label": {
-                fontSize: "0.875rem",
-              },
             }}
-          />
+          >
+            <div className="camera-controls-row">
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={showGuide}
+                    onChange={() => setShowGuide(!showGuide)}
+                    color="primary"
+                    size="small"
+                  />
+                }
+                label={
+                  <Typography variant="body2">
+                    Show face positioning guide
+                  </Typography>
+                }
+                sx={{
+                  "& .MuiFormControlLabel-label": {
+                    fontSize: "0.875rem",
+                  },
+                }}
+              />
+
+              {/* Simple button version */}
+              <button
+                className="reload-camera-button"
+                onClick={handleRetryCamera}
+              >
+                <span>↻</span> Reload Camera
+              </button>
+            </div>
+          </Box>
 
           <div className={`camera-wrapper ${status}`}>
             <video

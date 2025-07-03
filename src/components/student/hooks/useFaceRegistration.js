@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import apiService from "../../../api/apiService";
+import pheService from "../../../api/pheService"; // Import the PHE service
 
 export default function useFaceRegistration(user) {
   const [registeredFaces, setRegisteredFaces] = useState([]);
   const [faceRegDialogOpen, setFaceRegDialogOpen] = useState(false);
   const [faceRegLoading, setFaceRegLoading] = useState(false);
   const [faceRegError, setFaceRegError] = useState("");
-  const [faceRegSuccess, setFaceRegSuccess] = useState(null);
+  const [faceRegSuccess, setFaceRegSuccess] = useState("");
+  const [isPHEEnabled, setIsPHEEnabled] = useState(false);
   const [stream, setStream] = useState(null);
   const [selectedFace, setSelectedFace] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -130,49 +132,105 @@ export default function useFaceRegistration(user) {
     });
   };
 
-  const registerFace = async () => {
+  // Function to register a face
+  const registerFace = async (imageBlob) => {
+    setFaceRegLoading(true);
+    setFaceRegError("");
+    setFaceRegSuccess("");
     try {
-      setFaceRegLoading(true);
-      setFaceRegError("");
-      setFaceRegSuccess(null);
-
-      const imageBlob = await captureImage();
+      console.log("registerFace called with imageBlob:", imageBlob);
       if (!imageBlob) {
-        setFaceRegError("Failed to capture image");
-        return;
+        throw new Error("No image captured. Please try again.");
       }
 
-      const formData = new FormData();
-      formData.append("file", imageBlob, "register-face.jpg");
-      formData.append("device_id", "web");
+      if (imageBlob.size < 5000) {
+        throw new Error(
+          "Captured image is too small. Please ensure good lighting and try again.",
+        );
+      }
 
-      const response = await apiService.post(
-        "/attendance/register-face",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
+      console.log("Image blob size:", imageBlob.size, "bytes");
 
-      setFaceRegSuccess({
-        message: "Face registered successfully!",
-        confidence: response.data.confidence,
-        count: response.data.embeddings_count,
-        alignedFace: response.data.aligned_face,
-      });
+      // Check if PHE is enabled (with caching)
+      const pheEnabled = await pheService.isPHEEnabled();
+      console.log("PHE enabled:", pheEnabled);
 
-      await fetchRegisteredFaces();
+      let response;
+      if (pheEnabled) {
+        // Try PHE registration
+        try {
+          response = await pheService.registerFace(imageBlob);
+          console.log("PHE microservice registerFace response:", response);
+
+          // Format the success data from PHE registration to match expected format
+          const successData = {
+            message: response.message || "Face registered successfully with PHE",
+            embeddings_count: 1, // Since we don't get this info from PHE service
+            confidence: 1.0, // PHE doesn't provide confidence score
+            face_id: response.embedding_id,
+            registration_group_id: response.registration_group_id,
+            // No aligned face available with PHE
+            phe_protected: true, // Add this flag to indicate PHE protection
+          };
+
+          setFaceRegSuccess(successData);
+          fetchRegisteredFaces();
+          return successData;
+        } catch (pheError) {
+          console.error("PHE registration failed:", pheError);
+          setFaceRegError(
+            pheError.message ||
+              "PHE registration failed. Trying standard registration...",
+          );
+
+          // Fall back to standard registration
+          const formData = new FormData();
+          formData.append("file", imageBlob, "face.jpg");
+          response = await apiService.post(
+            "/attendance/register-face",
+            formData,
+          );
+        }
+      } else {
+        // Use standard registration
+        const formData = new FormData();
+        formData.append("file", imageBlob, "face.jpg");
+        response = await apiService.post("/attendance/register-face", formData);
+        console.log("Standard registerFace response:", response);
+      }
+
+      setFaceRegSuccess(response.data);
+      fetchRegisteredFaces();
+      return response.data;
     } catch (error) {
-      console.error("Error registering face:", error);
+      console.error("Face registration error:", error);
       setFaceRegError(
-        error.response?.data?.detail || "Failed to register face",
+        error.message ||
+          error.response?.data?.detail ||
+          "Failed to register face. Please try again.",
       );
+      return null;
     } finally {
       setFaceRegLoading(false);
     }
   };
+
+  // Check if PHE is enabled when component mounts
+  useEffect(() => {
+    const checkPHEStatus = async () => {
+      try {
+        console.log("Checking PHE status from useFaceRegistration...");
+        const pheEnabled = await pheService.isPHEEnabled();
+        console.log("PHE enabled status:", pheEnabled);
+        setIsPHEEnabled(pheEnabled);
+      } catch (error) {
+        console.error("Error checking PHE status:", error);
+        setIsPHEEnabled(false);
+      }
+    };
+
+    checkPHEStatus();
+  }, []);
 
   const deleteFace = async (faceId) => {
     try {
@@ -206,6 +264,7 @@ export default function useFaceRegistration(user) {
     faceRegLoading,
     faceRegError,
     faceRegSuccess,
+    isPHEEnabled,
     selectedFace,
     detailsOpen,
     videoRef,
@@ -217,5 +276,6 @@ export default function useFaceRegistration(user) {
     openFaceDetails,
     setDetailsOpen,
     resetRegistration,
+    captureImage,
   };
 }

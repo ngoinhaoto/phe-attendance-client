@@ -11,10 +11,12 @@ import {
   CircularProgress,
   Switch,
   FormControlLabel,
+  Chip,
 } from "@mui/material";
 import {
   AddAPhoto as AddPhotoIcon,
   Check as CheckIcon,
+  Lock as LockIcon,
 } from "@mui/icons-material";
 
 const FaceRegistrationDialog = ({
@@ -27,8 +29,23 @@ const FaceRegistrationDialog = ({
   canvasRef,
   onRegister,
   onReset,
+  captureImage,
 }) => {
   const [showGuide, setShowGuide] = useState(true);
+
+  // Function to handle errors by passing them back to the parent
+  const handleError = (errorMessage) => {
+    // If error comes from the parent component via props, use its structure
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      typeof error.setFaceRegError === "function"
+    ) {
+      error.setFaceRegError(errorMessage);
+    } else {
+      console.error("Error handler not available:", errorMessage);
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -44,9 +61,26 @@ const FaceRegistrationDialog = ({
           <Alert severity="success" sx={{ mb: 2 }}>
             {success.message}
             <br />
-            Confidence: {(success.confidence * 100).toFixed(1)}%
-            <br />
-            You now have {Math.ceil(success.count / 2)} registered face images.
+            {success.phe_protected && (
+              <Box sx={{ mt: 1 }}>
+                <Chip
+                  icon={<LockIcon fontSize="small" />}
+                  label="PHE Protected"
+                  color="success"
+                  size="small"
+                />
+                <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                  Your face data is encrypted with Partially Homomorphic
+                  Encryption
+                </Typography>
+              </Box>
+            )}
+            {success.embeddings_count && (
+              <>
+                You now have {Math.ceil(success.embeddings_count / 2)}{" "}
+                registered face images.
+              </>
+            )}
             {success.alignedFace && (
               <Box sx={{ mt: 1, textAlign: "center" }}>
                 <img
@@ -210,7 +244,44 @@ const FaceRegistrationDialog = ({
           </Button>
         ) : (
           <Button
-            onClick={onRegister}
+            onClick={async () => {
+              try {
+                console.log("Register Face button clicked");
+
+                // Ensure camera is initialized
+                if (
+                  !videoRef.current ||
+                  !videoRef.current.srcObject ||
+                  videoRef.current.readyState < 2
+                ) {
+                  console.warn("Video not ready, waiting...");
+                  await new Promise((resolve) => setTimeout(resolve, 1000));
+                }
+
+                const imageBlob = await captureImage();
+                console.log(
+                  "Captured image blob:",
+                  imageBlob ? `${imageBlob.size} bytes` : "null",
+                );
+
+                if (!imageBlob) {
+                  throw new Error(
+                    "Failed to capture image. Please ensure camera is working.",
+                  );
+                }
+
+                if (imageBlob.size < 5000) {
+                  throw new Error(
+                    "Captured image is too small. Please ensure good lighting and try again.",
+                  );
+                }
+
+                await onRegister(imageBlob);
+              } catch (error) {
+                console.error("Error in face registration:", error);
+                handleError(error.message || "Failed to register face");
+              }
+            }}
             variant="contained"
             color="primary"
             disabled={loading}

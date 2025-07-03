@@ -15,6 +15,7 @@ import AttendanceStatsCards from "./components/AttendanceStatsCards";
 import UpcomingSessionsList from "./components/UpcomingSessionsList";
 import RecentAttendanceList from "./components/RecentAttendanceList";
 import SecuritySettingsCard from "./components/SecuritySettingsCard"; // Import the new component
+import PHEStatusIndicator from "../shared/PHEStatusIndicator";
 
 const StudentDashboard = () => {
   const { user } = useSelector((state) => state.auth);
@@ -24,7 +25,6 @@ const StudentDashboard = () => {
   const { loading, error, classes, upcomingSessions, recentAttendance, stats } =
     useStudentData(user);
 
-  // Face registration functionality using custom hook
   const {
     registeredFaces,
     faceRegDialogOpen,
@@ -42,6 +42,7 @@ const StudentDashboard = () => {
     openFaceDetails,
     setDetailsOpen,
     resetRegistration,
+    captureImage, // Add this prop
   } = useFaceRegistration(user);
 
   // For initial development, show placeholder info if no data is available
@@ -79,9 +80,16 @@ const StudentDashboard = () => {
 
   return (
     <Box sx={{ py: 2 }}>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: "bold" }}>
-        Student Dashboard
-      </Typography>
+      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+        <Typography
+          variant="h4"
+          gutterBottom
+          sx={{ fontWeight: "bold", mr: 2 }}
+        >
+          Student Dashboard
+        </Typography>
+        <PHEStatusIndicator />
+      </Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -97,7 +105,7 @@ const StudentDashboard = () => {
         openFaceDetails={openFaceDetails}
         deleteFace={deleteFace}
       />
-      
+
       {/* Security Settings Card */}
       <SecuritySettingsCard />
 
@@ -124,6 +132,7 @@ const StudentDashboard = () => {
         canvasRef={canvasRef}
         onRegister={registerFace}
         onReset={resetRegistration}
+        captureImage={captureImage} // Add this prop
       />
 
       <FaceDetailsDialog

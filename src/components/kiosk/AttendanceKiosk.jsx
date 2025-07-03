@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import "./AttendanceKiosk.css";
 import apiService from "../../api/apiService";
@@ -81,6 +81,24 @@ const AttendanceKiosk = () => {
     },
   );
 
+  // Define the onCheckinSuccess function
+  const onCheckinSuccess = useCallback(
+    (response) => {
+      // Handle successful check-in, for example:
+      const studentName =
+        response.data?.user_name || response.data?.user?.full_name || "Student";
+
+      // You might want to show a success message or update UI
+      setMessage(`Successfully checked in: ${studentName}`);
+
+      // Optionally fetch updated session info
+      if (selectedSessionId) {
+        fetchSessionInfo(selectedSessionId);
+      }
+    },
+    [fetchSessionInfo, selectedSessionId, setMessage],
+  );
+
   const { startCamera, stopCamera, captureImage, checkIn } = useCameraFunctions(
     {
       videoRef,
@@ -93,6 +111,7 @@ const AttendanceKiosk = () => {
       apiService,
       setRecentCheckins,
       sessionInfo,
+      onCheckinSuccess, // Pass the function here
     },
   );
 

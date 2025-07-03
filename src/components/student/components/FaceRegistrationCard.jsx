@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Box,
   Typography,
@@ -8,31 +8,49 @@ import {
   CardContent,
   Button,
   Alert,
-  IconButton
-} from '@mui/material';
+  IconButton,
+  Tooltip,
+  Chip,
+} from "@mui/material";
 import {
   Photo as CameraIcon,
-  DeleteOutline as DeleteIcon
-} from '@mui/icons-material';
-import { formatDate } from '../../../utils/dateUtils';
+  DeleteOutline as DeleteIcon,
+} from "@mui/icons-material";
+import LockIcon from "@mui/icons-material/Lock";
+import { formatDate } from "../../../utils/dateUtils";
 
-const FaceRegistrationCard = ({ 
-  registeredFaces, 
-  openFaceRegistrationDialog, 
-  openFaceDetails, 
-  deleteFace 
+const FaceRegistrationCard = ({
+  registeredFaces,
+  openFaceRegistrationDialog,
+  openFaceDetails,
+  deleteFace,
+  isPHEEnabled, // Add this prop
 }) => {
   return (
-    <Paper sx={{ p: 3, mb: 3 }}>
+    <Paper sx={{ p: 3, mb: 4 }}>
       <Box
         sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
         }}
       >
-        <Typography variant="h6">Face Registration</Typography>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Typography variant="h6">Face Registration</Typography>
+          {isPHEEnabled && (
+            <Tooltip title="Your face data is protected with PHE encryption">
+              <Chip
+                icon={<LockIcon fontSize="small" />}
+                label="PHE Protected"
+                color="success"
+                size="small"
+                sx={{ ml: 2 }}
+              />
+            </Tooltip>
+          )}
+        </Box>
+
         <Button
           variant="contained"
           startIcon={<CameraIcon />}
@@ -51,7 +69,7 @@ const FaceRegistrationCard = ({
         <>
           <Typography variant="body2" gutterBottom>
             You have {registeredFaces.length} registered face
-            {registeredFaces.length !== 1 ? 's' : ''}. For best recognition
+            {registeredFaces.length !== 1 ? "s" : ""}. For best recognition
             results, register multiple angles in different lighting conditions.
           </Typography>
 
@@ -61,9 +79,9 @@ const FaceRegistrationCard = ({
                 <Card
                   variant="outlined"
                   sx={{
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s',
-                    '&:hover': { transform: 'scale(1.02)' }
+                    cursor: "pointer",
+                    transition: "transform 0.2s",
+                    "&:hover": { transform: "scale(1.02)" },
                   }}
                   onClick={() => openFaceDetails(face)}
                 >
@@ -71,27 +89,27 @@ const FaceRegistrationCard = ({
                     <Box
                       sx={{
                         height: 160,
-                        overflow: 'hidden',
-                        borderBottom: '1px solid rgba(0,0,0,0.1)',
-                        position: 'relative'
+                        overflow: "hidden",
+                        borderBottom: "1px solid rgba(0,0,0,0.1)",
+                        position: "relative",
                       }}
                     >
                       <img
                         src={`data:image/jpeg;base64,${face.image}`}
                         alt="Registered Face"
                         style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover'
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
                         }}
                       />
                       <Box
                         sx={{
-                          position: 'absolute',
+                          position: "absolute",
                           top: 8,
                           right: 8,
-                          bgcolor: 'rgba(0,0,0,0.5)',
-                          borderRadius: '50%'
+                          bgcolor: "rgba(0,0,0,0.5)",
+                          borderRadius: "50%",
                         }}
                       >
                         <IconButton
@@ -102,7 +120,7 @@ const FaceRegistrationCard = ({
                             deleteFace(face.id);
                           }}
                           title="Delete this face registration"
-                          sx={{ color: 'white' }}
+                          sx={{ color: "white" }}
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>
@@ -112,9 +130,9 @@ const FaceRegistrationCard = ({
                   <CardContent sx={{ py: 1.5 }}>
                     <Box
                       sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
                       }}
                     >
                       <Box>
@@ -124,7 +142,8 @@ const FaceRegistrationCard = ({
                         </Typography>
                         {face.confidence_score && (
                           <Typography variant="caption" color="text.secondary">
-                            Confidence: {(face.confidence_score * 100).toFixed(1)}%
+                            Confidence:{" "}
+                            {(face.confidence_score * 100).toFixed(1)}%
                           </Typography>
                         )}
                       </Box>

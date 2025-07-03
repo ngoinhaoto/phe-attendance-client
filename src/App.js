@@ -7,10 +7,11 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import { Provider } from "react-redux";
+import { Provider, useDispatch } from "react-redux";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import store from "./store";
+import { checkPHEStatus } from "./features/phe/pheSlice";
 
 // Components
 import LoginPage from "./components/auth/LoginPage";
@@ -115,6 +116,7 @@ const theme = createTheme({
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch(); // Now this is safe because it's inside Provider
 
   // Add auth state monitoring and kiosk mode check
   useEffect(() => {
@@ -164,11 +166,20 @@ function AppContent() {
     // Listen for popstate events (browser back/forward buttons)
     window.addEventListener("popstate", blockNavigation);
 
+    // Check PHE status initially
+    dispatch(checkPHEStatus());
+
+    // Then check every 2 minutes
+    const interval = setInterval(() => {
+      dispatch(checkPHEStatus());
+    }, 120000);
+
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("popstate", blockNavigation);
+      clearInterval(interval);
     };
-  }, [location, navigate]);
+  }, [dispatch, location, navigate]);
 
   return (
     <Routes>

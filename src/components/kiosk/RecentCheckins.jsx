@@ -25,14 +25,14 @@ const RecentCheckins = ({ recentCheckins }) => {
         {recentCheckins.map((checkin, index) => (
           <li
             key={index}
-            className={`checkin-item ${checkin.status?.toLowerCase() || ""}`}
+            className={`checkin-item ${checkin.status ? checkin.status.toLowerCase() : ""}`}
           >
             <div className="checkin-name">{checkin.name}</div>
             <div className="checkin-time">
-              {checkin.status.toLowerCase() === "absent" ? "—" : checkin.time}
+              {checkin.status && checkin.status.toLowerCase() === "absent" ? "—" : checkin.time}
             </div>
             <div className="checkin-status">
-              {checkin.status}
+              {checkin.status || "Unknown"}
               {checkin.lateMinutes > 0 && ` (${checkin.lateMinutes}m late)`}
             </div>
           </li>

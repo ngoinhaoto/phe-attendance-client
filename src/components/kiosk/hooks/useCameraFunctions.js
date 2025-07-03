@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import pheService from "../../../api/pheService";
 
 export default function useCameraFunctions({
   videoRef,
@@ -11,6 +12,7 @@ export default function useCameraFunctions({
   apiService,
   setRecentCheckins,
   sessionInfo,
+  onCheckinSuccess, // Add this parameter
 }) {
   // Start camera
   const startCamera = useCallback(
@@ -260,11 +262,6 @@ export default function useCameraFunctions({
 
   // Handle check-in
   const checkIn = useCallback(async () => {
-    if (!selectedSessionId) {
-      setErrorMessage("Please select a session first");
-      return;
-    }
-
     try {
       setStatus("processing");
       setMessage("Initializing camera...");
@@ -317,56 +314,63 @@ export default function useCameraFunctions({
 
       setMessage("Processing face recognition...");
 
-      // Create form data
-      const formData = new FormData();
-      formData.append("file", imageBlob, "attendance.jpg");
+      const isPHEEnabled = await pheService.isPHEEnabled();
 
-      // Send to API
-      setMessage("Sending to server...");
-      const response = await apiService.post(
-        `/attendance/check-in?session_id=${selectedSessionId}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
+      let response;
+      if (isPHEEnabled) {
+        console.log("Using direct PHE microservice for check-in");
+        response = await pheService.verifyFace(imageBlob, selectedSessionId);
+      } else {
+        // Use regular verification
+        console.log("Using standard check-in");
+        const formData = new FormData();
+        formData.append("file", imageBlob, "attendance.jpg");
 
-      // Update status and message
-      setStatus("success");
-      console.log("Check-in response:", response.data);
-      setMessage(
-        `Success! ${
-          response.data.user?.full_name ||
-          response.data.user?.name ||
-          response.data.user_name ||
-          "Unknown Student"
-        } is ${
-          response.data.status === "LATE"
-            ? `late (${response.data.late_minutes || 0} minutes).`
-            : "on time."
-        }`,
-      );
+        response = await apiService.post(
+          `/attendance/check-in/${selectedSessionId}`,
+          formData,
+        );
+      }
 
-      // Add to recent check-ins
+      console.log("Check-in response:", response);
+
+      const attendanceRecorded = response.attendance_recorded;
+
+      if (attendanceRecorded) {
+        if (typeof onCheckinSuccess === "function") {
+          onCheckinSuccess(response);
+        } else {
+          console.log("Check-in successful", response);
+        }
+
+        // Get user info from the check-in details
+        const userName =
+          response.check_in_details?.user?.name ||
+          response.check_in_details?.user?.full_name ||
+          "Student";
+
+        // Set a more user-friendly success message
+        setStatus("success");
+        setMessage(`${userName} checked in successfully!`);
+      } else {
+        setErrorMessage(response?.message || "Face not recognized");
+        setStatus("error");
+      }
+
+      const details = response?.check_in_details || {};
+
       const checkin = {
         id: Date.now(),
-        name:
-          response.data.user?.full_name ||
-          response.data.full_name ||
-          response.data.student_name ||
-          response.data.user?.name ||
-          response.data.user_name ||
-          "Unknown Student",
-        time: new Date().toLocaleTimeString(),
-        status: response.data.status,
-        lateMinutes: response.data.late_minutes || 0,
+        name: details.user?.name || "Unknown",
+        time: details.check_in_time
+          ? new Date(details.check_in_time).toLocaleTimeString()
+          : new Date().toLocaleTimeString(),
+        status: details.status || "Unknown",
+        lateMinutes: details.late_minutes || 0,
       };
 
       setRecentCheckins((prev) => [checkin, ...prev.slice(0, 9)]);
 
-      // Reset after 3 seconds
       setTimeout(() => {
         setStatus("scanning");
         setMessage("Waiting to scan...");
@@ -399,6 +403,7 @@ export default function useCameraFunctions({
     apiService,
     setRecentCheckins,
     startCamera,
+    onCheckinSuccess, // Add this dependency
   ]);
 
   return {
