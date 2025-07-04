@@ -206,7 +206,7 @@ const KioskCamera = ({
             <Box
               sx={{
                 width: "100%",
-                maxWidth: "500px",
+                maxWidth: "620px",
                 mt: 1,
                 p: 2,
                 bgcolor: "rgba(25, 118, 210, 0.1)",

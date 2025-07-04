@@ -119,6 +119,54 @@ const pheService = {
       throw error;
     }
   },
+
+  // Add new method to pheService.js
+  registerFaceServerSide: async (imageBlob) => {
+    try {
+      console.log(
+        "Registering face with server-side encryption, blob size:",
+        imageBlob.size,
+      );
+
+      if (!imageBlob || imageBlob.size < 1000) {
+        throw new Error(
+          "Image too small or invalid. Please try again with a clearer photo.",
+        );
+      }
+
+      const formData = new FormData();
+      formData.append("file", imageBlob, "face.jpg");
+
+      const response = await pheMicroserviceClient.post(
+        "/register-face-server-encryption",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          timeout: 60000,
+        },
+      );
+
+      console.log("Server-side encryption registration response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error in server-side face registration:", error);
+
+      if (error.response?.status === 500) {
+        console.error("PHE microservice internal error:", error.response?.data);
+
+        const errorMsg =
+          error.response?.data?.detail ||
+          "The face processing service encountered an error. Please try again.";
+
+        throw new Error(errorMsg);
+      }
+
+      throw error;
+    }
+  },
 };
 
 export default pheService;

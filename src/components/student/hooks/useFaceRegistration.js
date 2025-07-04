@@ -277,5 +277,8 @@ export default function useFaceRegistration(user) {
     setDetailsOpen,
     resetRegistration,
     captureImage,
+    setFaceRegLoading,  // Make sure this is included!
+    setFaceRegSuccess,  // Make sure this is included!
+    fetchRegisteredFaces  // Make sure this is included!
   };
 }

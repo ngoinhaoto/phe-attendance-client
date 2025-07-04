@@ -42,7 +42,10 @@ const StudentDashboard = () => {
     openFaceDetails,
     setDetailsOpen,
     resetRegistration,
-    captureImage, // Add this prop
+    captureImage,
+    setFaceRegLoading,
+    setFaceRegSuccess,
+    fetchRegisteredFaces,
   } = useFaceRegistration(user);
 
   // For initial development, show placeholder info if no data is available
@@ -132,7 +135,10 @@ const StudentDashboard = () => {
         canvasRef={canvasRef}
         onRegister={registerFace}
         onReset={resetRegistration}
-        captureImage={captureImage} // Add this prop
+        captureImage={captureImage}
+        setFaceRegLoading={setFaceRegLoading}
+        setFaceRegSuccess={setFaceRegSuccess}
+        fetchRegisteredFaces={fetchRegisteredFaces}
       />
 
       <FaceDetailsDialog

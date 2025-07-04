@@ -17,7 +17,9 @@ import {
   AddAPhoto as AddPhotoIcon,
   Check as CheckIcon,
   Lock as LockIcon,
+  Storage as StorageIcon, // Add this import
 } from "@mui/icons-material";
+import pheService from "../../../api/pheService"; // Add this import
 
 const FaceRegistrationDialog = ({
   open,
@@ -30,6 +32,9 @@ const FaceRegistrationDialog = ({
   onRegister,
   onReset,
   captureImage,
+  setFaceRegLoading, // Add these props
+  setFaceRegSuccess,
+  fetchRegisteredFaces,
 }) => {
   const [showGuide, setShowGuide] = useState(true);
 
@@ -243,53 +248,76 @@ const FaceRegistrationDialog = ({
             Register Another
           </Button>
         ) : (
-          <Button
-            onClick={async () => {
-              try {
-                console.log("Register Face button clicked");
-
-                // Ensure camera is initialized
-                if (
-                  !videoRef.current ||
-                  !videoRef.current.srcObject ||
-                  videoRef.current.readyState < 2
-                ) {
-                  console.warn("Video not ready, waiting...");
-                  await new Promise((resolve) => setTimeout(resolve, 1000));
+          <>
+            <Button
+              onClick={async () => {
+                try {
+                  const imageBlob = await captureImage();
+                  if (!imageBlob) {
+                    throw new Error(
+                      "Failed to capture image. Please ensure camera is working.",
+                    );
+                  }
+                  await onRegister(imageBlob);
+                } catch (error) {
+                  handleError(error.message || "Failed to register face");
                 }
+              }}
+              variant="contained"
+              color="primary"
+              disabled={loading}
+              startIcon={loading ? undefined : <CheckIcon />}
+            >
+              {loading ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+              {loading ? "Processing..." : "Register Face"}
+            </Button>
 
-                const imageBlob = await captureImage();
-                console.log(
-                  "Captured image blob:",
-                  imageBlob ? `${imageBlob.size} bytes` : "null",
-                );
+            {/* Add this button for server-side encryption */}
+            <Button
+              onClick={async () => {
+                try {
+                  const imageBlob = await captureImage();
+                  if (!imageBlob) {
+                    throw new Error(
+                      "Failed to capture image. Please ensure camera is working.",
+                    );
+                  }
 
-                if (!imageBlob) {
-                  throw new Error(
-                    "Failed to capture image. Please ensure camera is working.",
+                  setFaceRegLoading(true);
+                  const response = await pheService.registerFaceServerSide(
+                    imageBlob,
                   );
-                }
 
-                if (imageBlob.size < 5000) {
-                  throw new Error(
-                    "Captured image is too small. Please ensure good lighting and try again.",
+                  // Format the success data
+                  const successData = {
+                    message:
+                      response.message ||
+                      "Face registered with server-side encryption",
+                    embeddings_count: 1,
+                    face_id: response.embedding_id,
+                    registration_group_id: response.registration_group_id,
+                    phe_protected: true,
+                    server_encrypted: true,
+                  };
+
+                  setFaceRegSuccess(successData);
+                  fetchRegisteredFaces();
+                } catch (error) {
+                  handleError(
+                    error.message || "Failed to register face on server",
                   );
+                } finally {
+                  setFaceRegLoading(false);
                 }
-
-                await onRegister(imageBlob);
-              } catch (error) {
-                console.error("Error in face registration:", error);
-                handleError(error.message || "Failed to register face");
-              }
-            }}
-            variant="contained"
-            color="primary"
-            disabled={loading}
-            startIcon={loading ? undefined : <CheckIcon />}
-          >
-            {loading ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
-            {loading ? "Processing..." : "Register Face"}
-          </Button>
+              }}
+              variant="outlined"
+              color="secondary"
+              disabled={loading}
+              startIcon={<StorageIcon />}
+            >
+              Register (Server Encryption)
+            </Button>
+          </>
         )}
       </DialogActions>
     </Dialog>
