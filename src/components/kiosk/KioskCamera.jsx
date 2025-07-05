@@ -8,10 +8,12 @@ import {
   Button,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import { set } from "date-fns";
 
 const KioskCamera = ({
   loadingSession,
   status,
+  setStatus, // <-- add this
   message,
   videoRef,
   canvasRef,
@@ -23,6 +25,8 @@ const KioskCamera = ({
 
   const handleRetryCamera = () => {
     setCameraRetries((prev) => prev + 1);
+    setStatus("loading");
+
     startCamera();
   };
 
@@ -188,6 +192,14 @@ const KioskCamera = ({
                   <div className="success-icon">✓</div>
                   <p>Check-in successful!</p>
                 </div>
+              </div>
+            )}
+
+            {/* Loading indicator for camera initialization */}
+            {status === "loading" && (
+              <div className="camera-loading-indicator">
+                <CircularProgress size={40} />
+                <p>Initializing camera...</p>
               </div>
             )}
           </div>

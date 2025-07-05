@@ -60,6 +60,7 @@ export default function useCameraFunctions({
           // Set stream to video element
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
+          setStatus("scanning");
 
           // Create a promise that resolves when the video starts playing
           return new Promise((resolve) => {
@@ -406,10 +407,16 @@ export default function useCameraFunctions({
     onCheckinSuccess, // Add this dependency
   ]);
 
+  const handleRetryCamera = () => {
+    setStatus("loading");
+    startCamera();
+  };
+
   return {
     startCamera,
     stopCamera,
     captureImage,
     checkIn,
+    handleRetryCamera,
   };
 }

@@ -365,6 +365,7 @@ const AttendanceKiosk = () => {
             <KioskCamera
               loadingSession={loadingSession}
               status={status}
+              setStatus={setStatus} // <-- add this
               message={message}
               videoRef={videoRef}
               canvasRef={canvasRef}
