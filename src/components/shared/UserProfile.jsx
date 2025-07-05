@@ -27,6 +27,12 @@ import {
 
 // Import our new PasswordChangeForm component
 import PasswordChangeForm from "./PasswordChangeForm";
+import {
+  getRoleColors,
+  getAvatarGradient,
+  getBackgroundGradient,
+} from "../../utils/roleColors";
+import { formatDate } from "../../utils/dateUtils";
 
 const UserProfile = () => {
   const theme = useTheme();
@@ -39,34 +45,6 @@ const UserProfile = () => {
       </Box>
     );
   }
-
-  const getRoleColor = (role) => {
-    switch (role) {
-      case "admin":
-        return ["#FF8A65", "#FF5722"]; // Orange gradient
-      case "teacher":
-        return ["#90CAF9", "#2196F3"]; // Blue gradient
-      case "student":
-        return ["#A5D6A7", "#4CAF50"]; // Green gradient
-      default:
-        return ["#E0E0E0", "#9E9E9E"]; // Gray gradient
-    }
-  };
-
-  const getAvatarGradient = (role) => {
-    const [color1, color2] = getRoleColor(role);
-    return `linear-gradient(135deg, ${color1} 0%, ${color2} 100%)`;
-  };
-
-  const getBackgroundGradient = (role) => {
-    const [color1, color2] = getRoleColor(role);
-    return `linear-gradient(135deg, ${color1}30 0%, ${color2}10 100%)`;
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "Not available";
-    return new Date(dateString).toLocaleString();
-  };
 
   const roleText = user.role.charAt(0).toUpperCase() + user.role.slice(1);
 
@@ -202,7 +180,7 @@ const UserProfile = () => {
                 }}
               >
                 <ListItemIcon>
-                  <PersonIcon sx={{ color: getRoleColor(user.role)[1] }} />
+                  <PersonIcon sx={{ color: getRoleColors(user.role)[1] }} />
                 </ListItemIcon>
                 <ListItemText
                   primary={
@@ -220,7 +198,7 @@ const UserProfile = () => {
                 }}
               >
                 <ListItemIcon>
-                  <EmailIcon sx={{ color: getRoleColor(user.role)[1] }} />
+                  <EmailIcon sx={{ color: getRoleColors(user.role)[1] }} />
                 </ListItemIcon>
                 <ListItemText
                   primary={
@@ -238,7 +216,7 @@ const UserProfile = () => {
                 }}
               >
                 <ListItemIcon>
-                  <RoleIcon sx={{ color: getRoleColor(user.role)[1] }} />
+                  <RoleIcon sx={{ color: getRoleColors(user.role)[1] }} />
                 </ListItemIcon>
                 <ListItemText
                   primary={<Typography fontWeight="medium">Role</Typography>}
@@ -266,7 +244,7 @@ const UserProfile = () => {
                   }}
                 >
                   <ListItemIcon>
-                    <DateIcon sx={{ color: getRoleColor(user.role)[1] }} />
+                    <DateIcon sx={{ color: getRoleColors(user.role)[1] }} />
                   </ListItemIcon>
                   <ListItemText
                     primary={
@@ -286,7 +264,7 @@ const UserProfile = () => {
                 }}
               >
                 <ListItemIcon>
-                  <KeyIcon sx={{ color: getRoleColor(user.role)[1] }} />
+                  <KeyIcon sx={{ color: getRoleColors(user.role)[1] }} />
                 </ListItemIcon>
                 <ListItemText
                   primary={

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   AppBar,
   Toolbar,
@@ -7,18 +7,20 @@ import {
   Box,
   Tooltip,
   Badge,
-  Button
-} from '@mui/material';
+  Button,
+} from "@mui/material";
 import {
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
-  Notifications as NotificationIcon
+  Notifications as NotificationIcon,
 } from "@mui/icons-material";
-import UserMenu from './UserMenu';
-import { Link } from 'react-router-dom';
-import CameraIcon from '@mui/icons-material/Camera';
+import UserMenu from "./UserMenu";
+import { Link } from "react-router-dom";
+import CameraIcon from "@mui/icons-material/Camera";
+import { getRoleColors } from "../../../utils/roleColors";
 
-const AppHeader = ({ user, open, roleColors, toggleDrawer }) => {
+const AppHeader = ({ user, open, toggleDrawer }) => {
+  const roleColors = user ? getRoleColors(user.role) : ["#1976d2", "#9c27b0"];
   const roleGradient = `linear-gradient(135deg, ${roleColors[0]} 0%, ${roleColors[1]} 100%)`;
 
   return (
@@ -79,10 +81,10 @@ const AppHeader = ({ user, open, roleColors, toggleDrawer }) => {
         {user ? (
           <UserMenu user={user} roleGradient={roleGradient} />
         ) : (
-          <Button 
-            color="inherit" 
-            component={Link} 
-            to="/kiosk" 
+          <Button
+            color="inherit"
+            component={Link}
+            to="/kiosk"
             startIcon={<CameraIcon />}
             sx={{ ml: 2 }}
           >

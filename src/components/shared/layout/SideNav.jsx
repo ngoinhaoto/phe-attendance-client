@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Drawer,
   Toolbar,
@@ -9,11 +9,12 @@ import {
   ListItemText,
   Divider,
   Avatar,
-  Typography
-} from '@mui/material';
+  Typography,
+} from "@mui/material";
 import { Logout as LogoutIcon } from "@mui/icons-material";
 import authService from "../../../api/authService";
 import { useNavigate } from "react-router-dom";
+import { getRoleColors } from "../../../utils/roleColors";
 
 const SideNav = ({
   user,
@@ -24,9 +25,9 @@ const SideNav = ({
   menuItems,
   handleNavigation,
   isActive,
-  roleColors
 }) => {
   const navigate = useNavigate();
+  const roleColors = getRoleColors(user.role);
   const roleGradient = `linear-gradient(135deg, ${roleColors[0]} 0%, ${roleColors[1]} 100%)`;
 
   const handleLogout = () => {
@@ -61,16 +62,14 @@ const SideNav = ({
         }}
       />
       <Box sx={{ overflow: "auto", mt: 2, px: 2 }}>
-        {user && (
-          <UserProfile user={user} roleGradient={roleGradient} />
-        )}
+        {user && <UserProfile user={user} roleGradient={roleGradient} />}
 
         <Divider sx={{ mx: -2, mb: 2 }} />
 
-        <NavigationList 
-          items={menuItems} 
-          handleNavigation={handleNavigation} 
-          isActive={isActive} 
+        <NavigationList
+          items={menuItems}
+          handleNavigation={handleNavigation}
+          isActive={isActive}
           roleColors={roleColors}
         />
 
@@ -204,9 +203,7 @@ const NavigationList = ({ items, handleNavigation, isActive, roleColors }) => (
           <ListItemIcon
             sx={{
               minWidth: 40,
-              color: isActive(item.path)
-                ? roleColors[1]
-                : "text.secondary",
+              color: isActive(item.path) ? roleColors[1] : "text.secondary",
             }}
           >
             {item.icon}

@@ -1,7 +1,14 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Box, CssBaseline, CircularProgress, Fade, useTheme, useMediaQuery } from "@mui/material";
+import {
+  Box,
+  CssBaseline,
+  CircularProgress,
+  Fade,
+  useTheme,
+  useMediaQuery,
+} from "@mui/material";
 
 // Custom hooks and components
 import useNavigation from "./hooks/useNavigation";
@@ -9,6 +16,7 @@ import useMenuItems from "./hooks/useMenuItems";
 import AppHeader from "./layout/AppHeader";
 import SideNav from "./layout/SideNav";
 import DashboardRoutes from "./routes/DashboardRoutes";
+import { getRoleColors } from "../../utils/roleColors";
 
 const drawerWidth = 260;
 
@@ -17,16 +25,13 @@ const Dashboard = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { user, isLoading } = useSelector((state) => state.auth);
   const location = useLocation();
-  
+
   // Custom hooks for navigation and drawer state
-  const { 
-    open, 
-    toggleDrawer, 
-    handleNavigation,
-    isActive 
-  } = useNavigation(isMobile, location);
-  
-  // Get menu items based on user role
+  const { open, toggleDrawer, handleNavigation, isActive } = useNavigation(
+    isMobile,
+    location,
+  );
+
   const menuItems = useMenuItems(user);
 
   // Show loading indicator while fetching user data
@@ -46,20 +51,20 @@ const Dashboard = () => {
   }
 
   // Get role colors for theming
-  const roleColors = getRoleColors(user?.role);
-  
+  const roleColors = getRoleColors(user.role);
+
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      
+
       {/* App Header */}
-      <AppHeader 
+      <AppHeader
         user={user}
         open={open}
         roleColors={roleColors}
         toggleDrawer={toggleDrawer}
       />
-      
+
       {/* Sidebar Navigation */}
       <SideNav
         user={user}
@@ -72,7 +77,7 @@ const Dashboard = () => {
         isActive={isActive}
         roleColors={roleColors}
       />
-      
+
       {/* Main Content */}
       <Box
         component="main"
@@ -88,7 +93,8 @@ const Dashboard = () => {
           minHeight: "100vh",
         }}
       >
-        <Box sx={{ height: theme.mixins.toolbar.minHeight }} /> {/* Toolbar spacer */}
+        <Box sx={{ height: theme.mixins.toolbar.minHeight }} />{" "}
+        {/* Toolbar spacer */}
         <Fade in={true} style={{ transitionDelay: "150ms" }}>
           <Box
             sx={{
@@ -105,20 +111,6 @@ const Dashboard = () => {
       </Box>
     </Box>
   );
-};
-
-// Helper function to get role colors
-const getRoleColors = (role) => {
-  switch (role) {
-    case "admin":
-      return ["#FF8A65", "#FF5722"]; // Orange gradient
-    case "teacher":
-      return ["#90CAF9", "#2196F3"]; // Blue gradient
-    case "student":
-      return ["#A5D6A7", "#4CAF50"]; // Green gradient
-    default:
-      return ["#E0E0E0", "#9E9E9E"]; // Gray gradient
-  }
 };
 
 export default Dashboard;

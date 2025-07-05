@@ -19,6 +19,14 @@ import DateRangePicker from "./dashboard/DateRangePicker";
 
 const COLORS = ["#FF5722", "#2196F3", "#4CAF50", "#FFC107"];
 
+const ADMIN_GRADIENT = "linear-gradient(135deg, #E1A6B8 0%, #7C6FC4 100%)";
+const ADMIN_GRADIENT_TEXT = {
+  background: ADMIN_GRADIENT,
+  WebkitBackgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  display: "inline-block",
+};
+
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
@@ -248,10 +256,7 @@ const AdminDashboard = () => {
         sx={{
           mb: 4,
           fontWeight: "bold",
-          background: "linear-gradient(45deg, #FF5722 0%, #FF8A65 100%)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          display: "inline-block",
+          ...ADMIN_GRADIENT_TEXT, // Use the gradient text style
         }}
       >
         Admin Dashboard
