@@ -315,82 +315,116 @@ export default function useCameraFunctions({
 
       setMessage("Processing face recognition...");
 
-      const isPHEEnabled = await pheService.isPHEEnabled();
-
-      let response;
-      if (isPHEEnabled) {
+      try {
+        // Only use PHE verification
         console.log("Using direct PHE microservice for check-in");
-        response = await pheService.verifyFace(imageBlob, selectedSessionId);
-      } else {
-        // Use regular verification
-        console.log("Using standard check-in");
-        const formData = new FormData();
-        formData.append("file", imageBlob, "attendance.jpg");
-
-        response = await apiService.post(
-          `/attendance/check-in/${selectedSessionId}`,
-          formData,
+        const response = await pheService.verifyFace(
+          imageBlob,
+          selectedSessionId,
         );
-      }
+        console.log("Check-in response:", response);
 
-      console.log("Check-in response:", response);
+        // Process the successful response
+        if (response && response.match_found) {
+          // Handle successful match
+          setStatus("success");
+          setMessage(`Welcome, ${response.best_match.full_name}!`);
 
-      const attendanceRecorded = response.attendance_recorded;
+          // Add to recent check-ins
+          if (setRecentCheckins) {
+            setRecentCheckins((prev) => [
+              {
+                id: response.best_match.user_id,
+                name: response.best_match.full_name,
+                timestamp: new Date().toISOString(),
+                similarity: response.highest_similarity.toFixed(2),
+              },
+              ...prev.slice(0, 9),
+            ]);
+          }
 
-      if (attendanceRecorded) {
-        if (typeof onCheckinSuccess === "function") {
-          onCheckinSuccess(response);
+          // Call success callback if provided
+          if (onCheckinSuccess) {
+            onCheckinSuccess(response);
+          }
+
+          // Reset after success display
+          setTimeout(() => {
+            setStatus("scanning");
+            setMessage("Waiting to scan...");
+          }, 3000);
         } else {
-          console.log("Check-in successful", response);
+          // Handle no match found
+          setStatus("error");
+          setMessage(
+            "Face not recognized. Please try again or contact support.",
+          );
+
+          // Reset after error display
+          setTimeout(() => {
+            setStatus("scanning");
+            setMessage("Waiting to scan...");
+          }, 5000);
+        }
+      } catch (error) {
+        console.error("Face verification error:", error);
+        setStatus("error");
+
+        // Extract error message from response
+        let errorMsg = "Failed to verify face";
+
+        if (error.response) {
+          // Log full error for debugging
+          console.error("Error response:", error.response);
+
+          const errorDetail = error.response.data?.detail || "";
+          console.log("Error detail:", errorDetail);
+
+          // Check if the error is a 400 validation error wrapped in a 500 response
+          if (
+            typeof errorDetail === "string" &&
+            (errorDetail.includes("400:") ||
+              errorDetail.includes("Incomplete face") ||
+              errorDetail.includes("No face detected") ||
+              errorDetail.includes("Face could not be detected") ||
+              errorDetail.includes("spoofing"))
+          ) {
+            // Clean up the error message
+            let cleanMessage = errorDetail;
+            if (cleanMessage.includes("400:")) {
+              cleanMessage = cleanMessage.split("400:")[1].trim();
+            }
+
+            errorMsg = cleanMessage;
+          } else if (error.response.status === 400) {
+            // Direct 400 error
+            errorMsg = errorDetail || "Face validation failed";
+          } else {
+            // Other server errors
+            errorMsg = "Server error processing your face. Please try again.";
+          }
+        } else if (error.message) {
+          errorMsg = error.message;
         }
 
-        // Get user info from the check-in details
-        const userName =
-          response.check_in_details?.user?.name ||
-          response.check_in_details?.user?.full_name ||
-          "Student";
+        setMessage(errorMsg);
 
-        // Set a more user-friendly success message
-        setStatus("success");
-        setMessage(`${userName} checked in successfully!`);
-      } else {
-        setErrorMessage(response?.message || "Face not recognized");
-        setStatus("error");
+        // Reset after showing error
+        setTimeout(() => {
+          setStatus("scanning");
+          setMessage("Waiting to scan...");
+        }, 5000);
       }
-
-      const details = response?.check_in_details || {};
-
-      const checkin = {
-        id: Date.now(),
-        name: details.user?.name || "Unknown",
-        time: details.check_in_time
-          ? new Date(details.check_in_time).toLocaleTimeString()
-          : new Date().toLocaleTimeString(),
-        status: details.status || "Unknown",
-        lateMinutes: details.late_minutes || 0,
-      };
-
-      setRecentCheckins((prev) => [checkin, ...prev.slice(0, 9)]);
-
-      setTimeout(() => {
-        setStatus("scanning");
-        setMessage("Waiting to scan...");
-      }, 3000);
     } catch (error) {
-      console.error("Check-in error:", error);
+      console.error("Camera or capture error:", error);
       setStatus("error");
+      setMessage(error.message || "Failed to capture image");
 
-      // Extract error message from response if available
-      const errorMsg =
-        error.response?.data?.detail || error.message || "Failed to check in";
-      setMessage(errorMsg);
-      setErrorMessage(errorMsg);
-
-      // Reset after 3 seconds
+      // Reset after showing error
       setTimeout(() => {
         setStatus("scanning");
         setMessage("Waiting to scan...");
-      }, 3000);
+      }, 5000);
     }
   }, [
     selectedSessionId,
@@ -401,10 +435,9 @@ export default function useCameraFunctions({
     setMessage,
     setErrorMessage,
     captureImage,
-    apiService,
     setRecentCheckins,
     startCamera,
-    onCheckinSuccess, // Add this dependency
+    onCheckinSuccess,
   ]);
 
   const handleRetryCamera = () => {

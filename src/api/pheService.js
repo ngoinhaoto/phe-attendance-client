@@ -75,15 +75,46 @@ const pheService = {
     } catch (error) {
       console.error("Error in PHE face registration:", error);
 
-      if (error.response?.status === 500) {
-        console.error("PHE microservice internal error:", error.response?.data);
+      if (error.response) {
+        const statusCode = error.response.status;
+        const errorDetail = error.response.data?.detail || "Unknown error";
 
-        const errorMsg =
-          error.response?.data?.detail ||
-          "The face processing service encountered an error. Please try again.";
-
-        throw new Error(errorMsg);
+        if (statusCode === 400) {
+          // Handle 400 Bad Request errors (validation errors)
+          if (
+            errorDetail.includes("No face detected") ||
+            errorDetail.includes("Face could not be detected")
+          ) {
+            throw new Error(
+              "No face detected in the image. Please ensure your face is clearly visible and try again.",
+            );
+          } else if (errorDetail.includes("Incomplete face")) {
+            throw new Error(
+              "Your entire face must be visible in the frame. Please adjust your position and try again.",
+            );
+          } else if (errorDetail.includes("spoofing")) {
+            throw new Error(
+              "Our system detected a potential security issue. Please use a live face for registration.",
+            );
+          }
+          // Pass through the detailed error message for other 400 errors
+          throw new Error(errorDetail);
+        } else if (statusCode === 500) {
+          // Handle 500 Internal Server errors
+          console.error(
+            "PHE microservice internal error:",
+            error.response?.data,
+          );
+          throw new Error(
+            "The face processing service encountered an error. Please try again later.",
+          );
+        }
       }
+
+      // For network errors or other unhandled errors
+      throw new Error(
+        "Connection error. Please check your internet connection and try again.",
+      );
     }
   },
 
@@ -149,22 +180,55 @@ const pheService = {
         },
       );
 
-      console.log("Server-side encryption registration response:", response.data);
+      console.log(
+        "Server-side encryption registration response:",
+        response.data,
+      );
       return response.data;
     } catch (error) {
       console.error("Error in server-side face registration:", error);
 
-      if (error.response?.status === 500) {
-        console.error("PHE microservice internal error:", error.response?.data);
+      if (error.response) {
+        // Server responded with an error
+        const statusCode = error.response.status;
+        const errorDetail = error.response.data?.detail || "Unknown error";
 
-        const errorMsg =
-          error.response?.data?.detail ||
-          "The face processing service encountered an error. Please try again.";
-
-        throw new Error(errorMsg);
+        if (statusCode === 400) {
+          // Handle 400 Bad Request errors (validation errors)
+          if (
+            errorDetail.includes("No face detected") ||
+            errorDetail.includes("Face could not be detected")
+          ) {
+            throw new Error(
+              "No face detected in the image. Please ensure your face is clearly visible and try again.",
+            );
+          } else if (errorDetail.includes("Incomplete face")) {
+            throw new Error(
+              "Your entire face must be visible in the frame. Please adjust your position and try again.",
+            );
+          } else if (errorDetail.includes("spoofing")) {
+            throw new Error(
+              "Our system detected a potential security issue. Please use a live face for registration.",
+            );
+          }
+          // Pass through the detailed error message for other 400 errors
+          throw new Error(errorDetail);
+        } else if (statusCode === 500) {
+          // Handle 500 Internal Server errors
+          console.error(
+            "PHE microservice internal error:",
+            error.response?.data,
+          );
+          throw new Error(
+            "The face processing service encountered an error. Please try again later.",
+          );
+        }
       }
 
-      throw error;
+      // For network errors or other unhandled errors
+      throw new Error(
+        "Connection error. Please check your internet connection and try again.",
+      );
     }
   },
 };

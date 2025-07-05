@@ -162,15 +162,14 @@ export default function useFaceRegistration(user) {
           response = await pheService.registerFace(imageBlob);
           console.log("PHE microservice registerFace response:", response);
 
-          // Format the success data from PHE registration to match expected format
           const successData = {
-            message: response.message || "Face registered successfully with PHE",
-            embeddings_count: 1, // Since we don't get this info from PHE service
-            confidence: 1.0, // PHE doesn't provide confidence score
+            message:
+              response.message || "Face registered successfully with PHE",
+            embeddings_count: 1,
+            confidence: 1.0,
             face_id: response.embedding_id,
             registration_group_id: response.registration_group_id,
-            // No aligned face available with PHE
-            phe_protected: true, // Add this flag to indicate PHE protection
+            phe_protected: true,
           };
 
           setFaceRegSuccess(successData);
@@ -178,18 +177,12 @@ export default function useFaceRegistration(user) {
           return successData;
         } catch (pheError) {
           console.error("PHE registration failed:", pheError);
+
           setFaceRegError(
-            pheError.message ||
-              "PHE registration failed. Trying standard registration...",
+            pheError.message || "Face registration failed. Please try again.",
           );
 
-          // Fall back to standard registration
-          const formData = new FormData();
-          formData.append("file", imageBlob, "face.jpg");
-          response = await apiService.post(
-            "/attendance/register-face",
-            formData,
-          );
+          throw pheError;
         }
       } else {
         // Use standard registration
@@ -277,8 +270,8 @@ export default function useFaceRegistration(user) {
     setDetailsOpen,
     resetRegistration,
     captureImage,
-    setFaceRegLoading,  // Make sure this is included!
-    setFaceRegSuccess,  // Make sure this is included!
-    fetchRegisteredFaces  // Make sure this is included!
+    setFaceRegLoading, // Make sure this is included!
+    setFaceRegSuccess, // Make sure this is included!
+    fetchRegisteredFaces, // Make sure this is included!
   };
 }

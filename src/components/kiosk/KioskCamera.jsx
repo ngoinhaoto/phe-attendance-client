@@ -160,14 +160,25 @@ const KioskCamera = ({
               </Box>
             )}
 
-            {(status === "error" ||
-              (streamRef.current === null && status === "scanning")) && (
+            {status === "error" && (
               <div className="camera-error-overlay">
-                <div style={{ textAlign: "center", color: "white" }}>
-                  <p style={{ marginBottom: "16px" }}>
-                    {status === "error"
-                      ? "Error occurred"
-                      : "Camera not active or showing black screen"}
+                <div
+                  style={{
+                    textAlign: "center",
+                    color: "white",
+                    maxWidth: "80%",
+                  }}
+                >
+                  <p
+                    style={{
+                      marginBottom: "16px",
+                      fontSize: "1.1rem",
+                      fontWeight: "500",
+                      padding: "0 15px",
+                      lineHeight: "1.4",
+                    }}
+                  >
+                    {message || "Error occurred"}
                   </p>
                   <button onClick={handleRetryCamera} className="retry-button">
                     Retry Camera {cameraRetries > 0 ? `(${cameraRetries})` : ""}
@@ -205,7 +216,15 @@ const KioskCamera = ({
           </div>
 
           <div className={`status-indicator ${status}`}>
-            <div className="status-message">{message}</div>
+            <div className="status-message">
+              {status === "error" ? (
+                <span className="error-status">
+                  {message || "Error occurred"}
+                </span>
+              ) : (
+                message || "Waiting to scan..."
+              )}
+            </div>
             {status === "scanning" && streamRef.current === null && (
               <div className="camera-status">
                 Camera not active - click Retry
