@@ -263,6 +263,11 @@ export default function useCameraFunctions({
 
   // Handle check-in
   const checkIn = useCallback(async () => {
+    if (!selectedSessionId) {
+      setErrorMessage("Please select a session first");
+      return;
+    }
+
     try {
       setStatus("processing");
       setMessage("Initializing camera...");
@@ -316,51 +321,66 @@ export default function useCameraFunctions({
       setMessage("Processing face recognition...");
 
       try {
-        // Only use PHE verification
-        console.log("Using direct PHE microservice for check-in");
+        // Use PHE microservice for check-in
         const response = await pheService.verifyFace(
           imageBlob,
           selectedSessionId,
         );
-        console.log("Check-in response:", response);
+        console.log("PHE verify-face-direct response:", response);
 
-        // Process the successful response
         if (response && response.match_found) {
-          // Handle successful match
+          // 1. Send check-in to server
+          const checkInPayload = {
+            session_id: selectedSessionId,
+            user_id: response.best_match.user_id,
+            verification_method: "phe",
+          };
+
+          let checkInResult = null;
+          try {
+            checkInResult = await apiService.post(
+              "attendance/phe-check-in",
+              checkInPayload,
+            );
+          } catch (err) {
+            setStatus("error");
+            setMessage(
+              "Check-in failed: " + (err.response?.data?.detail || err.message),
+            );
+            return;
+          }
+
+          // 2. Use checkInResult.data for your UI
+          setRecentCheckins((prev) => [
+            {
+              id: response.best_match.user_id,
+              name: response.best_match.full_name,
+              status: checkInResult.data.status?.toLowerCase() || "present",
+              time: checkInResult.data.check_in_time
+                ? new Date(
+                    checkInResult.data.check_in_time,
+                  ).toLocaleTimeString()
+                : new Date().toLocaleTimeString(),
+            },
+            ...prev.slice(0, 9),
+          ]);
+
           setStatus("success");
-          setMessage(`Welcome, ${response.best_match.full_name}!`);
+          setMessage(`Welcome, ${response.best_match.full_name || "Student"}!`);
 
-          // Add to recent check-ins
-          if (setRecentCheckins) {
-            setRecentCheckins((prev) => [
-              {
-                id: response.best_match.user_id,
-                name: response.best_match.full_name,
-                timestamp: new Date().toISOString(),
-                similarity: response.highest_similarity.toFixed(2),
-              },
-              ...prev.slice(0, 9),
-            ]);
+          if (typeof onCheckinSuccess === "function") {
+            onCheckinSuccess(checkInResult);
           }
 
-          // Call success callback if provided
-          if (onCheckinSuccess) {
-            onCheckinSuccess(response);
-          }
-
-          // Reset after success display
           setTimeout(() => {
             setStatus("scanning");
             setMessage("Waiting to scan...");
           }, 3000);
         } else {
-          // Handle no match found
           setStatus("error");
           setMessage(
             "Face not recognized. Please try again or contact support.",
           );
-
-          // Reset after error display
           setTimeout(() => {
             setStatus("scanning");
             setMessage("Waiting to scan...");
@@ -435,6 +455,7 @@ export default function useCameraFunctions({
     setMessage,
     setErrorMessage,
     captureImage,
+    apiService,
     setRecentCheckins,
     startCamera,
     onCheckinSuccess,

@@ -84,9 +84,7 @@ const AttendanceKiosk = () => {
   // Define the onCheckinSuccess function
   const onCheckinSuccess = useCallback(
     (response) => {
-      // Handle successful check-in, for example:
-      const studentName =
-        response.data?.user_name || response.data?.user?.full_name || "Student";
+      const studentName = response.data?.user.name;
 
       // You might want to show a success message or update UI
       setMessage(`Successfully checked in: ${studentName}`);
