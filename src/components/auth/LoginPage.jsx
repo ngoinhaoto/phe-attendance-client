@@ -54,13 +54,14 @@ const LoginPage = () => {
       >
         <Paper elevation={3} sx={{ p: 4, width: "100%" }}>
           <Typography component="h1" variant="h5" align="center" gutterBottom>
-            Face Attendance System
+            PHE Face Attendance System
           </Typography>
 
           {error && <Alert severity="error">{error}</Alert>}
           {message === "admin_required" && (
             <Alert severity="warning" sx={{ mb: 2 }}>
-              Administrator access required. Please log in with an admin account.
+              Administrator access required. Please log in with an admin
+              account.
             </Alert>
           )}
 

@@ -65,7 +65,7 @@ const AppHeader = ({ user, open, toggleDrawer }) => {
               display: "none", // Remove this line if you have a logo
             }}
           />
-          Face Attendance System
+          PHE Face Attendance System
         </Typography>
 
         {/* Notification Icon */}
